@@ -2,9 +2,10 @@ package br.com.peixinho_karaoke.models.dao.impl
 
 import br.com.peixinho_karaoke.database.RequestsDatabaseFactory.dbQuery
 import br.com.peixinho_karaoke.models.Song
-import br.com.peixinho_karaoke.models.dao.SongDAO
 import br.com.peixinho_karaoke.models.Songs
+import br.com.peixinho_karaoke.models.dao.SongDAO
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 
 class SongDAOImpl : SongDAO {
     private fun resultRowToSong(row: ResultRow) = Song(
@@ -58,5 +59,8 @@ class SongDAOImpl : SongDAO {
         Songs.deleteWhere { Songs.songId eq id } > 0
     }
 
+    override suspend fun searchSong(searchString: String): List<Song> = dbQuery {
+        Songs.select(Songs.combined.like("%$searchString%")).map(::resultRowToSong).toList()
+    }
 
 }

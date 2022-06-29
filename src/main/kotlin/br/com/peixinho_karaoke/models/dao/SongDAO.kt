@@ -9,4 +9,5 @@ interface SongDAO {
     suspend fun addNewSong(songId: Int, title: String, artist: String, combined: String): Song?
     suspend fun addNewSongIgnore(songId: Int, title: String, artist: String, combined: String): Song?
     suspend fun editSong(songId: Int, title: String, artist: String, combined: String): Boolean
+    suspend fun searchSong(searchString: String): List<Song>
 }

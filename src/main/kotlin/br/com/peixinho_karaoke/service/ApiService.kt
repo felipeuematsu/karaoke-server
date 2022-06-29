@@ -9,6 +9,7 @@ import br.com.peixinho_karaoke.models.response.GetSerialResponse
 import br.com.peixinho_karaoke.models.response.GetVenuesResponse
 import br.com.peixinho_karaoke.models.response.VenueResponse
 import kotlinx.coroutines.runBlocking
+import java.time.LocalDateTime
 
 object ApiService {
     fun getSerial(): GetSerialResponse =
@@ -87,8 +88,33 @@ object ApiService {
             mapOf("error" to "true", "command" to "deleteRequest")
         }
 
-    fun submitRequest(): Any {
+    fun submitRequest(songId: Int, singerName: String): Any =
+        try {
+            runBlocking {
+                val song = SongDAOImpl().getSong(songId)
 
+                val newRequest = RequestDAOImpl().addNewRequest(
+                    requestId = 0,
+                    title = song!!.title,
+                    artist = song.artist,
+                    singer = singerName,
+                    requestTime = LocalDateTime.now(),
+                )
+                mapOf("error" to "false", "command" to "submitRequest", "requestId" to newRequest!!.requestId)
+            }
+        } catch (e: Exception) {
+            println(e.message)
+            mapOf("error" to "true", "command" to "submitRequest")
+        }
+
+    fun search(searchString: String) {
+        try {
+            runBlocking {
+                SongDAOImpl().searchSong(searchString)
+            }
+        } catch (e: Exception) {
+            println(e.message)
+        }
     }
 
 

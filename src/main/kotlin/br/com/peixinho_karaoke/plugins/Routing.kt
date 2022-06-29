@@ -1,6 +1,9 @@
 package br.com.peixinho_karaoke.plugins
 
-import br.com.peixinho_karaoke.models.request.ClientRequest
+import br.com.peixinho_karaoke.configuration.ApplicationConfiguration
+import br.com.peixinho_karaoke.models.request.ClientDefaultRequest
+import br.com.peixinho_karaoke.models.request.delete_song.DeleteSongDTO
+import br.com.peixinho_karaoke.models.request.submit_request.SubmitRequestDTO
 import br.com.peixinho_karaoke.service.ApiService
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -17,7 +20,12 @@ fun Application.configureRouting() {
     routing {
         post("/api") {
             val client = HttpClient(CIO)
-            val request = call.receive<ClientRequest>()
+            val request: ClientDefaultRequest = call.receive()
+
+            if (request.apiKey != ApplicationConfiguration.apiKey) {
+                return@post call.respond(HttpStatusCode.Unauthorized)
+            }
+
             client.use {
                 val response: HttpResponse = client.post {
                     url {
@@ -55,10 +63,23 @@ fun Application.configureRouting() {
             call.respond(message = ApiService.clearRequests())
         }
         post("/deleteRequest") {
-            call.respond(message = ApiService.deleteRequest())
+            val request: DeleteSongDTO = call.receive()
+            if (request.request_id == null) return@post call.respond(HttpStatusCode.BadRequest)
+            call.respond(message = ApiService.deleteRequest(request.request_id))
         }
         post("/submitRequest") {
-            call.respond(message = ApiService.submitRequest())
+            val request: SubmitRequestDTO = call.receive()
+            if (request.songId == null || request.singerName == null) {
+                return@post call.respond(HttpStatusCode.BadRequest)
+            }
+            call.respond(message = ApiService.submitRequest(request.songId, request.singerName))
+        }
+        post("/search") {
+            val request: ClientDefaultRequest = call.receive()
+            if (request.apiKey != ApplicationConfiguration.apiKey) {
+                return@post call.respond(HttpStatusCode.Unauthorized)
+            }
+            call.respond(message = ApiService.search(request.command))
         }
     }
 }
