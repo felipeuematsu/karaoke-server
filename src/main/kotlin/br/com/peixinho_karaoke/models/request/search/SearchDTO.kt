@@ -1,4 +1,8 @@
 package br.com.peixinho_karaoke.models.request.search
 
-class SearchDTO {
-}
+import kotlinx.serialization.Serializable
+
+@Serializable
+class SearchDTO(
+    val searchString: String?,
+)

@@ -1,8 +1,9 @@
 package br.com.peixinho_karaoke.plugins
 
 import br.com.peixinho_karaoke.configuration.ApplicationConfiguration
-import br.com.peixinho_karaoke.models.request.ClientDefaultRequest
+import br.com.peixinho_karaoke.models.request.ClientDefaultDTO
 import br.com.peixinho_karaoke.models.request.delete_song.DeleteSongDTO
+import br.com.peixinho_karaoke.models.request.search.SearchDTO
 import br.com.peixinho_karaoke.models.request.submit_request.SubmitRequestDTO
 import br.com.peixinho_karaoke.service.ApiService
 import io.ktor.client.*
@@ -20,7 +21,7 @@ fun Application.configureRouting() {
     routing {
         post("/api") {
             val client = HttpClient(CIO)
-            val request: ClientDefaultRequest = call.receive()
+            val request: ClientDefaultDTO = call.receive()
 
             if (request.apiKey != ApplicationConfiguration.apiKey) {
                 return@post call.respond(HttpStatusCode.Unauthorized)
@@ -64,7 +65,9 @@ fun Application.configureRouting() {
         }
         post("/deleteRequest") {
             val request: DeleteSongDTO = call.receive()
-            if (request.request_id == null) return@post call.respond(HttpStatusCode.BadRequest)
+            if (request.request_id == null) {
+                return@post call.respond(HttpStatusCode.BadRequest)
+            }
             call.respond(message = ApiService.deleteRequest(request.request_id))
         }
         post("/submitRequest") {
@@ -75,11 +78,22 @@ fun Application.configureRouting() {
             call.respond(message = ApiService.submitRequest(request.songId, request.singerName))
         }
         post("/search") {
-            val request: ClientDefaultRequest = call.receive()
-            if (request.apiKey != ApplicationConfiguration.apiKey) {
-                return@post call.respond(HttpStatusCode.Unauthorized)
+            val request: SearchDTO = call.receive()
+            if (request.searchString == null) {
+                return@post call.respond(HttpStatusCode.BadRequest)
             }
-            call.respond(message = ApiService.search(request.command))
+            call.respond(message = ApiService.search(request.searchString))
+        }
+        post("/connectionTest") {
+            call.respond(message = ApiService.connectionTest())
+        }
+        post("addSongs") {
+            val request: ClientDefaultDTO = call.receive()
+
+            if (request.songs == null) {
+                return@post call.respond(HttpStatusCode.BadRequest)
+            }
+            call.respond(message = ApiService.addSongs(request.songs))
         }
     }
 }

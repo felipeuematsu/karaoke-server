@@ -1,10 +1,13 @@
 package br.com.peixinho_karaoke.service
 
 import br.com.peixinho_karaoke.configuration.ApplicationConfiguration
+import br.com.peixinho_karaoke.models.Song
 import br.com.peixinho_karaoke.models.State
 import br.com.peixinho_karaoke.models.dao.impl.RequestDAOImpl
 import br.com.peixinho_karaoke.models.dao.impl.SongDAOImpl
 import br.com.peixinho_karaoke.models.dao.impl.StateDAOImpl
+import br.com.peixinho_karaoke.models.request.SongRequest
+import br.com.peixinho_karaoke.models.request.add_songs.AddSongsResponseDTO
 import br.com.peixinho_karaoke.models.response.GetSerialResponse
 import br.com.peixinho_karaoke.models.response.GetVenuesResponse
 import br.com.peixinho_karaoke.models.response.VenueResponse
@@ -57,7 +60,7 @@ object ApiService {
             dao?.accepting ?: false
         }
 
-    fun clearDatabase() = try {
+    fun clearDatabase(): Map<String, String> = try {
         runBlocking {
             StateDAOImpl().allStates().forEach { StateDAOImpl().deleteState(it.id) }
             SongDAOImpl().allSongs().forEach { SongDAOImpl().deleteSong(it.songId) }
@@ -68,7 +71,7 @@ object ApiService {
         mapOf("error" to "true", "command" to "clearDatabase")
     }
 
-    fun clearRequests() =
+    fun clearRequests(): Map<String, String> =
         try {
             runBlocking {
                 RequestDAOImpl().allRequests().forEach { RequestDAOImpl().deleteRequest(it.requestId) }
@@ -78,7 +81,7 @@ object ApiService {
             mapOf("error" to "true", "command" to "clearRequests")
         }
 
-    fun deleteRequest(requestId: Int) =
+    fun deleteRequest(requestId: Int): Map<String, String> =
         try {
             runBlocking {
                 RequestDAOImpl().deleteRequest(requestId)
@@ -88,7 +91,7 @@ object ApiService {
             mapOf("error" to "true", "command" to "deleteRequest")
         }
 
-    fun submitRequest(songId: Int, singerName: String): Any =
+    fun submitRequest(songId: Int, singerName: String): Map<String, Any> =
         try {
             runBlocking {
                 val song = SongDAOImpl().getSong(songId)
@@ -107,15 +110,58 @@ object ApiService {
             mapOf("error" to "true", "command" to "submitRequest")
         }
 
-    fun search(searchString: String) {
+    fun search(searchString: String): Map<String, Any> =
         try {
             runBlocking {
-                SongDAOImpl().searchSong(searchString)
+                return@runBlocking mapOf("error" to false, "songs" to SongDAOImpl().searchSong(searchString))
             }
         } catch (e: Exception) {
             println(e.message)
+            mapOf("error" to true, "songs" to listOf<Song>())
         }
-    }
 
 
+    fun connectionTest() =
+        mapOf("connection" to "ok", "command" to "connectionTest")
+
+    fun addSongs(songs: List<SongRequest>): AddSongsResponseDTO =
+        runBlocking {
+            val errors = mutableListOf<String>()
+            var count = 0
+            var artist: String? = null
+            var title: String? = null
+            songs.forEach {
+                try {
+                    if (it.title == null || it.artist == null) {
+                        errors.add("Title or artist is null")
+                        return@forEach
+                    }
+
+                    artist = it.artist
+                    title = it.title
+                    val newSong = SongDAOImpl().addNewSongIgnore(
+                        songId = 0,
+                        title = it.title,
+                        artist = it.artist,
+                        combined = it.artist + " " + it.title,
+                    )
+                    if (newSong == null) {
+                        errors.add("Song couldn't be added")
+                    }
+                    count++
+                } catch (e: Exception) {
+                    errors.add(e.message ?: "Unknown error")
+                    println(e.message)
+                    count++
+                }
+            }
+            AddSongsResponseDTO(
+                command = "addSongs",
+                error = if (errors.isEmpty()) "false" else "true",
+                last_title = title,
+                last_artist = artist,
+                errors = errors,
+                `entries processed` = count,
+            )
+        }
 }

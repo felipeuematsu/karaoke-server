@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ClientDefaultRequest(
+data class ClientDefaultDTO(
     val command: String,
     @SerialName("api_key") val apiKey: String,
     val singerName: String?,
