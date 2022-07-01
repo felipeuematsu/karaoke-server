@@ -8,7 +8,6 @@ interface RequestDAO {
     suspend fun getRequest(id: Int): Request?
     suspend fun deleteRequest(id: Int): Boolean
     suspend fun addNewRequest(
-        requestId: Int,
         title: String,
         artist: String,
         singer: String,
@@ -17,7 +16,6 @@ interface RequestDAO {
     ): Request?
 
     suspend fun addNewRequestIgnore(
-        requestId: Int,
         title: String,
         artist: String,
         singer: String,

@@ -4,7 +4,6 @@ import br.com.peixinho_karaoke.database.RequestsDatabaseFactory.dbQuery
 import br.com.peixinho_karaoke.models.State
 import br.com.peixinho_karaoke.models.dao.StateDAO
 import br.com.peixinho_karaoke.models.States
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.*
 
 class StateDAOImpl : StateDAO {
@@ -24,22 +23,38 @@ class StateDAOImpl : StateDAO {
             .singleOrNull()
     }
 
-    override suspend fun addNewState(id: Int, accepting: Boolean, serial: Int): State? = dbQuery {
+    override suspend fun addNewState(accepting: Boolean, serial: Int): State? = dbQuery {
         val insertStatement = States.insert {
-            it[States.id] = id
             it[States.accepting] = accepting
             it[States.serial] = serial
         }
         insertStatement.resultedValues?.map { resultRowToState(it) }?.singleOrNull()
     }
 
-    override suspend fun addNewStateIgnore(id: Int, accepting: Boolean, serial: Int): State? = dbQuery {
+    override suspend fun addNewStateIgnore(accepting: Boolean, serial: Int): State? = dbQuery {
         val insertStatement = States.insertIgnore {
-            it[States.id] = id
             it[States.accepting] = accepting
             it[States.serial] = serial
         }
         insertStatement.resultedValues?.map { resultRowToState(it) }?.singleOrNull()
+    }
+
+    override suspend fun addOrUpdateNewState(id: Int, accepting: Boolean, serial: Int): State? {
+        try {
+            val insertStatement = States.insert {
+                it[States.id] = id
+                it[States.accepting] = accepting
+                it[States.serial] = serial
+            }
+            return insertStatement.resultedValues?.map { resultRowToState(it) }?.singleOrNull()
+        } catch (e: Exception) {
+            val updatedId = States.update {
+                it[States.id] = id
+                it[States.accepting] = accepting
+                it[States.serial] = serial
+            }
+            return getState(updatedId)
+        }
     }
 
     override suspend fun editState(id: Int, accepting: Boolean, serial: Int): Boolean = dbQuery {
@@ -53,13 +68,5 @@ class StateDAOImpl : StateDAO {
 
     override suspend fun deleteState(id: Int): Boolean = dbQuery {
         States.deleteWhere { States.id eq id } > 0
-    }
-
-
-}
-
-val stateDao: StateDAO = StateDAOImpl().apply {
-    runBlocking {
-        addNewStateIgnore(0, false, 1)
     }
 }

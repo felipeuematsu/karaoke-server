@@ -27,14 +27,12 @@ class SongDAOImpl : SongDAO {
     }
 
     override suspend fun addNewSong(
-        songId: Int,
         title: String,
         artist: String,
         duration: Int,
         combined: String
     ): Song? = dbQuery {
         val insertSongment = Songs.insert {
-            it[Songs.songId] = songId
             it[Songs.artist] = artist
             it[Songs.title] = title
             it[Songs.duration] = duration
@@ -44,7 +42,6 @@ class SongDAOImpl : SongDAO {
     }
 
     override suspend fun addNewSongIgnore(
-        songId: Int,
         title: String,
         artist: String,
         duration: Int,
@@ -52,7 +49,6 @@ class SongDAOImpl : SongDAO {
     ): Song? =
         dbQuery {
             val insertSongment = Songs.insertIgnore {
-                it[Songs.songId] = songId
                 it[Songs.artist] = artist
                 it[Songs.title] = title
                 it[Songs.duration] = duration

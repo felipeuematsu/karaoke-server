@@ -28,7 +28,6 @@ class RequestDAOImpl : RequestDAO {
     }
 
     override suspend fun addNewRequest(
-        requestId: Int,
         title: String,
         artist: String,
         singer: String,
@@ -36,7 +35,6 @@ class RequestDAOImpl : RequestDAO {
         requestTime: LocalDateTime
     ): Request? = dbQuery {
         val insertRequestment = Requests.insert {
-            it[Requests.requestId] = requestId
             it[Requests.title] = title
             it[Requests.artist] = artist
             it[Requests.singer] = singer
@@ -47,7 +45,6 @@ class RequestDAOImpl : RequestDAO {
     }
 
     override suspend fun addNewRequestIgnore(
-        requestId: Int,
         title: String,
         artist: String,
         singer: String,
@@ -55,7 +52,6 @@ class RequestDAOImpl : RequestDAO {
         requestTime: LocalDateTime
     ): Request? = dbQuery {
         val insertRequestment = Requests.insertIgnore {
-            it[Requests.requestId] = Requests.requestId
             it[Requests.title] = title
             it[Requests.artist] = artist
             it[Requests.singer] = singer

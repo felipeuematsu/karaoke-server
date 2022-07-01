@@ -12,7 +12,6 @@ data class Song(
     val combined: String,
 )
 
-
 object Songs : Table("songdb") {
     val songId = integer("song_id").autoIncrement()
     val title = text("title")

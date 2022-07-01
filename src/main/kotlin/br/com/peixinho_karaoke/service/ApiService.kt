@@ -6,8 +6,9 @@ import br.com.peixinho_karaoke.models.State
 import br.com.peixinho_karaoke.models.dao.impl.RequestDAOImpl
 import br.com.peixinho_karaoke.models.dao.impl.SongDAOImpl
 import br.com.peixinho_karaoke.models.dao.impl.StateDAOImpl
-import br.com.peixinho_karaoke.models.request.SongRequest
 import br.com.peixinho_karaoke.models.request.add_songs.AddSongsResponseDTO
+import br.com.peixinho_karaoke.models.request.add_songs.SongDTO
+import br.com.peixinho_karaoke.models.request.get_requests.GetRequestsResponseDTO
 import br.com.peixinho_karaoke.models.response.GetSerialResponse
 import br.com.peixinho_karaoke.models.response.GetVenuesResponse
 import br.com.peixinho_karaoke.models.response.VenueResponse
@@ -97,7 +98,6 @@ object ApiService {
                 val song = SongDAOImpl().getSong(songId)
 
                 val newRequest = RequestDAOImpl().addNewRequest(
-                    requestId = 0,
                     title = song!!.title,
                     artist = song.artist,
                     singer = singerName,
@@ -125,8 +125,9 @@ object ApiService {
     fun connectionTest() =
         mapOf("connection" to "ok", "command" to "connectionTest")
 
-    fun addSongs(songs: List<SongRequest>): AddSongsResponseDTO =
-        runBlocking {
+    fun addSongs(songs: List<SongDTO>): AddSongsResponseDTO {
+        println("Adding ${songs.size} songs")
+        return runBlocking {
             val errors = mutableListOf<String>()
             var count = 0
             var artist: String? = null
@@ -141,7 +142,6 @@ object ApiService {
                     artist = it.artist
                     title = it.title
                     val newSong = SongDAOImpl().addNewSongIgnore(
-                        songId = 0,
                         title = it.title,
                         artist = it.artist,
                         combined = it.artist + " " + it.title,
@@ -166,4 +166,25 @@ object ApiService {
                 `entries processed` = count,
             )
         }
+    }
+
+    fun getRequests(): GetRequestsResponseDTO =
+        runBlocking {
+            try {
+                GetRequestsResponseDTO(
+                    requests = RequestDAOImpl().allRequests(),
+                    error = "false",
+                    command = "getRequests",
+                    serial = StateDAOImpl().getState(0)?.serial ?: 0
+                )
+            } catch (e: Exception) {
+                GetRequestsResponseDTO(
+                    requests = listOf(),
+                    error = "true",
+                    command = "getRequests",
+                    serial = StateDAOImpl().getState(0)?.serial ?: 0
+                )
+            }
+        }
+
 }

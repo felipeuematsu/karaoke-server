@@ -19,7 +19,7 @@ object RequestsDatabaseFactory {
             SchemaUtils.create(Requests)
             SchemaUtils.create(States)
             runBlocking {
-                StateDAOImpl().addNewStateIgnore(0, false, 1)
+                StateDAOImpl().addOrUpdateNewState(0, false, 1)
             }
         }
     }
