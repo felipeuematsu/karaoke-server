@@ -1,7 +1,9 @@
 package br.com.peixinho_karaoke.models
 
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Table
 
+@Serializable
 data class State(
     val id: Int,
     val accepting: Boolean,

@@ -91,7 +91,7 @@ object ApiService {
             mapOf("error" to "true", "command" to "deleteRequest")
         }
 
-    fun submitRequest(songId: Int, singerName: String): Map<String, Any> =
+    fun submitRequest(songId: Int, singerName: String, keyChange: Int?): Map<String, Any> =
         try {
             runBlocking {
                 val song = SongDAOImpl().getSong(songId)
@@ -101,6 +101,7 @@ object ApiService {
                     title = song!!.title,
                     artist = song.artist,
                     singer = singerName,
+                    keyChange = keyChange ?: 0,
                     requestTime = LocalDateTime.now(),
                 )
                 mapOf("error" to "false", "command" to "submitRequest", "requestId" to newRequest!!.requestId)
@@ -132,8 +133,8 @@ object ApiService {
             var title: String? = null
             songs.forEach {
                 try {
-                    if (it.title == null || it.artist == null) {
-                        errors.add("Title or artist is null")
+                    if (it.title == null || it.artist == null || it.duration == null) {
+                        errors.add("Title, artist or duration is null")
                         return@forEach
                     }
 
@@ -144,6 +145,7 @@ object ApiService {
                         title = it.title,
                         artist = it.artist,
                         combined = it.artist + " " + it.title,
+                        duration = it.duration,
                     )
                     if (newSong == null) {
                         errors.add("Song couldn't be added")

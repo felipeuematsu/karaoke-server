@@ -12,6 +12,7 @@ class SongDAOImpl : SongDAO {
         songId = row[Songs.songId],
         artist = row[Songs.artist],
         title = row[Songs.title],
+        duration = row[Songs.duration],
         combined = row[Songs.combined],
     )
 
@@ -25,32 +26,53 @@ class SongDAOImpl : SongDAO {
             .singleOrNull()
     }
 
-    override suspend fun addNewSong(songId: Int, title: String, artist: String, combined: String): Song? = dbQuery {
+    override suspend fun addNewSong(
+        songId: Int,
+        title: String,
+        artist: String,
+        duration: Int,
+        combined: String
+    ): Song? = dbQuery {
         val insertSongment = Songs.insert {
             it[Songs.songId] = songId
             it[Songs.artist] = artist
             it[Songs.title] = title
+            it[Songs.duration] = duration
             it[Songs.combined] = combined
         }
         insertSongment.resultedValues?.map(::resultRowToSong)?.singleOrNull()
     }
 
-    override suspend fun addNewSongIgnore(songId: Int, title: String, artist: String, combined: String): Song? =
+    override suspend fun addNewSongIgnore(
+        songId: Int,
+        title: String,
+        artist: String,
+        duration: Int,
+        combined: String
+    ): Song? =
         dbQuery {
             val insertSongment = Songs.insertIgnore {
                 it[Songs.songId] = songId
                 it[Songs.artist] = artist
                 it[Songs.title] = title
+                it[Songs.duration] = duration
                 it[Songs.combined] = combined
             }
             insertSongment.resultedValues?.map(::resultRowToSong)?.singleOrNull()
         }
 
-    override suspend fun editSong(songId: Int, title: String, artist: String, combined: String): Boolean = dbQuery {
+    override suspend fun editSong(
+        songId: Int,
+        title: String,
+        artist: String,
+        duration: Int,
+        combined: String
+    ): Boolean = dbQuery {
         Songs.update({ Songs.songId eq songId }) {
             it[Songs.songId] = songId
             it[Songs.artist] = artist
             it[Songs.title] = title
+            it[Songs.duration] = duration
             it[Songs.combined] = combined
         } > 0
     }

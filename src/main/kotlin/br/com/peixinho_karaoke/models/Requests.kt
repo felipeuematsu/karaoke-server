@@ -1,15 +1,19 @@
 package br.com.peixinho_karaoke.models
 
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.datetime
 import java.time.LocalDateTime
 
+@Serializable
 data class Request(
     val requestId: Int,
     val title: String,
     val artist: String,
     val singer: String,
-    val requestTime: LocalDateTime
+    val keyChange: Int,
+    @Serializable(with = LocalDateTimeSerializer::class)
+    val requestTime: LocalDateTime,
 )
 
 object Requests : Table("requests") {
@@ -17,7 +21,7 @@ object Requests : Table("requests") {
     val title = text("title")
     val artist = text("artist")
     val singer = text("singer")
+    val keyChange = integer("key_change")
     val requestTime = datetime("request_time")
-
     override val primaryKey = PrimaryKey(requestId)
 }

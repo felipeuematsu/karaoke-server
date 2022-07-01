@@ -19,4 +19,5 @@ data class ClientDefaultDTO(
 data class SongRequest(
     val artist: String?,
     val title: String?,
+    val duration: Int?,
 )

@@ -13,6 +13,7 @@ class RequestDAOImpl : RequestDAO {
         title = row[Requests.title],
         artist = row[Requests.artist],
         singer = row[Requests.singer],
+        keyChange = row[Requests.keyChange],
         requestTime = row[Requests.requestTime]
     )
 
@@ -31,6 +32,7 @@ class RequestDAOImpl : RequestDAO {
         title: String,
         artist: String,
         singer: String,
+        keyChange: Int,
         requestTime: LocalDateTime
     ): Request? = dbQuery {
         val insertRequestment = Requests.insert {
@@ -38,6 +40,7 @@ class RequestDAOImpl : RequestDAO {
             it[Requests.title] = title
             it[Requests.artist] = artist
             it[Requests.singer] = singer
+            it[Requests.keyChange] = keyChange
             it[Requests.requestTime] = requestTime
         }
         insertRequestment.resultedValues?.map { resultRowToRequest(it) }?.singleOrNull()
@@ -48,6 +51,7 @@ class RequestDAOImpl : RequestDAO {
         title: String,
         artist: String,
         singer: String,
+        keyChange: Int,
         requestTime: LocalDateTime
     ): Request? = dbQuery {
         val insertRequestment = Requests.insertIgnore {
@@ -56,6 +60,7 @@ class RequestDAOImpl : RequestDAO {
             it[Requests.artist] = artist
             it[Requests.singer] = singer
             it[Requests.requestTime] = requestTime
+            it[Requests.keyChange] = keyChange
         }
         insertRequestment.resultedValues?.map { resultRowToRequest(it) }?.singleOrNull()
     }
@@ -65,6 +70,7 @@ class RequestDAOImpl : RequestDAO {
         title: String,
         artist: String,
         singer: String,
+        keyChange: Int,
         requestTime: LocalDateTime
     ): Boolean = dbQuery {
         Requests.update({ Requests.requestId eq requestId }) {
@@ -73,6 +79,7 @@ class RequestDAOImpl : RequestDAO {
             it[Requests.artist] = artist
             it[Requests.singer] = singer
             it[Requests.requestTime] = requestTime
+            it[Requests.keyChange] = keyChange
         } > 0
     }
 

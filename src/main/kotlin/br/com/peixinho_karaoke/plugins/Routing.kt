@@ -2,7 +2,7 @@ package br.com.peixinho_karaoke.plugins
 
 import br.com.peixinho_karaoke.configuration.ApplicationConfiguration
 import br.com.peixinho_karaoke.models.request.ClientDefaultDTO
-import br.com.peixinho_karaoke.models.request.delete_song.DeleteSongDTO
+import br.com.peixinho_karaoke.models.request.delete_request.DeleteRequestDTO
 import br.com.peixinho_karaoke.models.request.search.SearchDTO
 import br.com.peixinho_karaoke.models.request.submit_request.SubmitRequestDTO
 import br.com.peixinho_karaoke.service.ApiService
@@ -64,7 +64,7 @@ fun Application.configureRouting() {
             call.respond(message = ApiService.clearRequests())
         }
         post("/deleteRequest") {
-            val request: DeleteSongDTO = call.receive()
+            val request: DeleteRequestDTO = call.receive()
             if (request.request_id == null) {
                 return@post call.respond(HttpStatusCode.BadRequest)
             }
@@ -75,7 +75,7 @@ fun Application.configureRouting() {
             if (request.songId == null || request.singerName == null) {
                 return@post call.respond(HttpStatusCode.BadRequest)
             }
-            call.respond(message = ApiService.submitRequest(request.songId, request.singerName))
+            call.respond(message = ApiService.submitRequest(request.songId, request.singerName, request.keyChange))
         }
         post("/search") {
             val request: SearchDTO = call.receive()
@@ -87,7 +87,7 @@ fun Application.configureRouting() {
         post("/connectionTest") {
             call.respond(message = ApiService.connectionTest())
         }
-        post("addSongs") {
+        post("/addSongs") {
             val request: ClientDefaultDTO = call.receive()
 
             if (request.songs == null) {

@@ -12,6 +12,7 @@ interface RequestDAO {
         title: String,
         artist: String,
         singer: String,
+        keyChange: Int,
         requestTime: LocalDateTime
     ): Request?
 
@@ -20,6 +21,7 @@ interface RequestDAO {
         title: String,
         artist: String,
         singer: String,
+        keyChange: Int,
         requestTime: LocalDateTime
     ): Request?
 
@@ -28,6 +30,7 @@ interface RequestDAO {
         title: String,
         artist: String,
         singer: String,
+        keyChange: Int,
         requestTime: LocalDateTime
     ): Boolean
 }
