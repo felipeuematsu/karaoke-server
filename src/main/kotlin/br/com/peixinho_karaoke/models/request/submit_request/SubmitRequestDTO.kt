@@ -6,5 +6,5 @@ import kotlinx.serialization.Serializable
 data class SubmitRequestDTO(
     val songId: Int?,
     val singerName: String?,
-    val keyChange: Int?,
+    val keyChange: Int? = null,
 )

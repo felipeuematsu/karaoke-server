@@ -1,8 +1,6 @@
 package br.com.peixinho_karaoke.database
 
-import br.com.peixinho_karaoke.models.Requests
-import br.com.peixinho_karaoke.models.Songs
-import br.com.peixinho_karaoke.models.States
+import br.com.peixinho_karaoke.models.*
 import br.com.peixinho_karaoke.models.dao.impl.StateDAOImpl
 import kotlinx.coroutines.*
 import org.jetbrains.exposed.sql.*
@@ -18,9 +16,14 @@ object RequestsDatabaseFactory {
             SchemaUtils.create(Songs)
             SchemaUtils.create(Requests)
             SchemaUtils.create(States)
+
+            SchemaUtils.create(Playlists)
+            SchemaUtils.create(PlaylistSongs)
             runBlocking {
                 StateDAOImpl().addOrUpdateNewState(0, false, 1)
             }
+
+
         }
     }
 

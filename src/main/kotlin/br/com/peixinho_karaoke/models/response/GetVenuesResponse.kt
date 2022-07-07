@@ -5,8 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class GetVenuesResponse(
     val venues: List<VenueResponse>,
-    val err: String = "false",
-    val com: String,
+    val error: String = "false",
+    val command: String = "getVenues",
 )
 
 @Serializable

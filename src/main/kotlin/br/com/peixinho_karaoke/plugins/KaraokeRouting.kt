@@ -7,6 +7,8 @@ import br.com.peixinho_karaoke.models.request.delete_request.DeleteRequestDTO
 import br.com.peixinho_karaoke.models.request.search.SearchDTO
 import br.com.peixinho_karaoke.models.request.submit_request.SubmitRequestDTO
 import br.com.peixinho_karaoke.service.ApiService
+import br.com.peixinho_karaoke.service.PlaylistsService
+import br.com.peixinho_karaoke.service.SpotifyService
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -18,6 +20,7 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 fun Application.configureRouting() {
@@ -54,8 +57,6 @@ fun Application.configureRouting() {
                 contentType(ContentType.Application.Json)
             }
 
-
-
             call.respondText(text = response.bodyAsText(), status = response.status)
             client.close()
 
@@ -86,14 +87,16 @@ fun Application.configureRouting() {
             if (request.request_id == null) {
                 return@post call.respond(HttpStatusCode.BadRequest)
             }
-            call.respond(message = ApiService.deleteRequest(request.request_id))
+            val message = ApiService.deleteRequest(request.request_id)
+            call.respond(message = message)
         }
         post("/submitRequest") {
             val request: SubmitRequestDTO = call.receive()
             if (request.songId == null || request.singerName == null) {
                 return@post call.respond(HttpStatusCode.BadRequest)
             }
-            call.respond(message = ApiService.submitRequest(request.songId, request.singerName, request.keyChange))
+            val message = ApiService.submitRequest(request.songId, request.singerName, request.keyChange)
+            call.respond(message = message)
         }
         post("/search") {
             val request: SearchDTO = call.receive()
@@ -106,15 +109,29 @@ fun Application.configureRouting() {
             call.respond(message = ApiService.connectionTest())
         }
         post("/addSongs") {
-            println("LOG addSongs")
             val request: AddSongsRequestDTO = call.receive()
-
-            println(request)
             if (request.songs == null) {
                 return@post call.respond(HttpStatusCode.BadRequest)
             }
             val message = ApiService.addSongs(request.songs)
             call.respond(message = message)
         }
+
+        get("/playlist") {
+
+        }
+
+        get("/images/{search}") {
+            val search = call.parameters["search"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val image = SpotifyService.searchImages(search) ?: return@get call.respond(HttpStatusCode.NotFound)
+
+            call.respondText { image }
+        }
+
+        post("/updatePlaylists") {
+
+            call.respond(PlaylistsService.updateDefaultPlaylists())
+        }
+
     }
 }

@@ -79,6 +79,10 @@ class RequestDAOImpl : RequestDAO {
         } > 0
     }
 
+    override suspend fun deleteAllRequests(): Int = dbQuery {
+        Requests.deleteAll()
+    }
+
     override suspend fun deleteRequest(id: Int): Boolean = dbQuery {
         Requests.deleteWhere { Requests.requestId eq id } > 0
     }

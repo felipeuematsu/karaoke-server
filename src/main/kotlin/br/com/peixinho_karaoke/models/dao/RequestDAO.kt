@@ -31,4 +31,6 @@ interface RequestDAO {
         keyChange: Int,
         requestTime: LocalDateTime
     ): Boolean
+
+    suspend fun deleteAllRequests(): Int
 }

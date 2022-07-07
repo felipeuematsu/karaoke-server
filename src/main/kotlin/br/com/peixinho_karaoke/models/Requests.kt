@@ -14,9 +14,7 @@ data class Request(
     val artist: String,
     val singer: String,
     val keyChange: Int,
-    @Serializable(with = LocalDateTimeSerializer::class)
-    @SerialName("request_time")
-    val requestTime: LocalDateTime,
+    @Serializable(with = LocalDateTimeSerializer::class) val requestTime: LocalDateTime,
 )
 
 object Requests : Table("requests") {

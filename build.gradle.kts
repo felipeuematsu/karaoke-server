@@ -43,8 +43,8 @@ dependencies {
     implementation("org.ktorm:ktorm-core:$ktorm_version")
     implementation("io.ktor:ktor-client:$ktor_client")
     implementation("io.ktor:ktor-client-core:$ktor_client_core")
-    implementation("io.ktor:ktor-client-cio:2.0.2")
-    implementation("io.ktor:ktor-client-content-negotiation:2.0.2")
+    implementation("io.ktor:ktor-client-cio:$ktor_client_core")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktor_client_core")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 
