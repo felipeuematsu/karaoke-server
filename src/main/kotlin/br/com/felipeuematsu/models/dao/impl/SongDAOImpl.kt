@@ -5,6 +5,7 @@ import br.com.felipeuematsu.entity.Song
 import br.com.felipeuematsu.entity.SongDTO
 import br.com.felipeuematsu.entity.DBSongs
 import br.com.felipeuematsu.models.dao.SongDAO
+import br.com.felipeuematsu.service.SpotifyService
 import org.jetbrains.exposed.sql.*
 import java.time.Instant
 
@@ -72,7 +73,7 @@ class SongDAOImpl : SongDAO {
     override suspend fun deleteSong(id: Int): Boolean = dbQuery { DBSongs.deleteWhere { DBSongs.id eq id } > 0 }
 
     override suspend fun searchSong(title: String?, artist: String?): List<SongDTO> = dbQuery {
-        if (title != null && artist != null) {
+        val songs = if (title != null && artist != null) {
             DBSongs.select { DBSongs.title like "%$title%" and (DBSongs.artist like "%$artist%") }
                 .map(::resultRowToSong).toList()
         } else if (title != null) {
@@ -84,6 +85,8 @@ class SongDAOImpl : SongDAO {
         } else {
             listOf()
         }
+        songs.forEach { it.imageUrl = SpotifyService.searchImages(it.artist) }
+        songs
     }
 
     override suspend fun deleteAllSongs(): Int = dbQuery {

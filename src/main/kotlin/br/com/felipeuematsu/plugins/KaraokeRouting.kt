@@ -1,10 +1,10 @@
 package br.com.felipeuematsu.plugins
 
-import br.com.felipeuematsu.entity.QueueSongDTO
 import br.com.felipeuematsu.entity.SingerDTO
 import br.com.felipeuematsu.models.request.add_path.AddPathRequestDTO
 import br.com.felipeuematsu.models.request.add_songs.AddSongsRequestDTO
 import br.com.felipeuematsu.models.request.submit_request.SubmitRequestDTO
+import br.com.felipeuematsu.models.response.CurrentSongDTO
 import br.com.felipeuematsu.service.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.*
@@ -20,15 +20,15 @@ import kotlinx.serialization.json.Json
 import java.nio.charset.Charset
 
 fun Application.configureRouting() {
+    var currentSong: CurrentSongDTO? = null
 
     routing {
         var webSocketSession: DefaultWebSocketSession? = null
         webSocket {
             webSocketSession = this
-//            while (isActive) {
-//                val message = incoming.receive()
-//                println(message)
-//            }
+            while (isActive) {
+                currentSong = receiveDeserialized<CurrentSongDTO>()
+            }
             println("Session started successfully")
         }
         delete("/clearDatabase") {
@@ -78,6 +78,12 @@ fun Application.configureRouting() {
             call.respond(PlaylistsService.getPlaylists())
         }
 
+        get("/playlist/{id}") {
+            val id = call.parameters["id"]?.toIntOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val playlist = PlaylistsService.getPlaylist(id) ?: return@get call.respond(HttpStatusCode.NotFound)
+            call.respond(playlist)
+        }
+
         get("/images/{search}") {
             val search = call.parameters["search"] ?: return@get call.respond(HttpStatusCode.BadRequest)
             val image = SpotifyService.searchImages(search) ?: return@get call.respond(HttpStatusCode.NotFound)
@@ -93,12 +99,9 @@ fun Application.configureRouting() {
             call.respond(QueueService.getQueue())
         }
 
-        delete("/queue") {
-            val dto = call.receive<QueueSongDTO>()
-            if (dto.song == null || dto.singer == null) {
-                return@delete call.respond(HttpStatusCode.BadRequest, "Song and Singer must not be null")
-            }
-            call.respond(QueueService.removeFromQueue(dto.song, dto.singer))
+        delete("/queue/{queueSongId}") {
+            val queueSongId = call.parameters["queueSongId"]?.toIntOrNull() ?: return@delete call.respond(HttpStatusCode.BadRequest, "Invalid id")
+            call.respond(QueueService.removeFromQueue(queueSongId))
         }
 
         post("/queue/skip") {
@@ -159,8 +162,10 @@ fun Application.configureRouting() {
         }
 
         post("/play/{id}") {
-            val idString = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Id must not be null")
-            val id = idString.toIntOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest, "Id must be a number")
+            val idString =
+                call.parameters["id"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Id must not be null")
+            val id =
+                idString.toIntOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest, "Id must be a number")
             val session = webSocketSession ?: return@post call.respond(
                 HttpStatusCode.FailedDependency,
                 "No WebSocket session found. Try opening the player again."
@@ -205,6 +210,11 @@ fun Application.configureRouting() {
         post("/singer") {
             val singerDTO = call.receive<SingerDTO>()
             call.respond(SingerService.addSinger(singerDTO.name))
+        }
+
+        get("/playing") {
+            val songDTO = currentSong?.songId?.let { ApiService.getSong(it) } ?: return@get call.respond(HttpStatusCode.NotFound)
+            call.respond(message = songDTO)
         }
     }
 }

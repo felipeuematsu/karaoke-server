@@ -25,7 +25,7 @@ object PlaylistsService {
     private fun updateLast50(): PlaylistDTO = transaction {
         val last50 = Playlist
             .find { Playlists.name eq "Last 50" }
-            .firstOrNull() ?: Playlist.new { name = "Last 50"; userName = "default"  }
+            .firstOrNull() ?: Playlist.new { name = "Last 50"; userName = "default" }
         last50.songs = SizedCollection(
             DBSongs
                 .select { DBSongs.plays greater 0 }
@@ -56,7 +56,9 @@ object PlaylistsService {
         top5Artists.forEach {
             transaction {
                 val artistPlaylist =
-                    Playlist.find { Playlists.name eq it }.firstOrNull() ?: Playlist.new { name = it; userName = "default"  }
+                    Playlist.find { Playlists.name eq it }.firstOrNull() ?: Playlist.new {
+                        name = it; userName = "default"
+                    }
                 artistPlaylist.songs = SizedCollection(
                     DBSongs.select { DBSongs.artist eq it }
                         .orderBy(DBSongs.plays to SortOrder.DESC)
@@ -74,6 +76,10 @@ object PlaylistsService {
     }
 
     fun getPlaylists(): List<PlaylistDTO> = transaction {
-        Playlist.all().map(Playlist::toDTO)
+        SimplePlaylist.all().map(SimplePlaylist::toDTO)
+    }
+
+    fun getPlaylist(id: Int): PlaylistDTO? = transaction {
+        Playlist.findById(id)?.toDTO()
     }
 }

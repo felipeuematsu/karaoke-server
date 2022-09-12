@@ -10,7 +10,7 @@ fun main() {
     embeddedServer(
         Netty,
         port = ApplicationConfiguration.serverPort,
-        host = "127.0.0.1",
+        host = "localhost",
         watchPaths = listOf("build/classes/kotlin/main/br/com/felipeuematsu")
     ) {
         KaraokeDatabase.init()

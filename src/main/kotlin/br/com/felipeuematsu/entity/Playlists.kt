@@ -27,6 +27,21 @@ class Playlist(id: EntityID<Int>) : IntEntity(id) {
     var imageUrl by Playlists.imageUrl
 }
 
+class SimplePlaylist(id: EntityID<Int>) : IntEntity(id) {
+    fun toDTO() = PlaylistDTO(
+        id = id.value,
+        name = name,
+        imageUrl = imageUrl,
+        description = description
+    )
+
+    companion object : IntEntityClass<SimplePlaylist>(Playlists)
+
+    var name by Playlists.name
+    var description by Playlists.description
+    var imageUrl by Playlists.imageUrl
+}
+
 object Playlists : IntIdTable("playlists") {
     val name = varchar("name", 255)
     val userName = varchar("user_name", 255)

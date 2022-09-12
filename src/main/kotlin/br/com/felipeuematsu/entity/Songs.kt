@@ -43,9 +43,8 @@ data class SongDTO(
     val plays: Int,
     @Serializable(with = InstantSerializer::class)
     val lastPlayed: Instant?,
-
-    ) {
-}
+    var imageUrl: String? = null,
+)
 
 class Song(songId: EntityID<Int>) : IntEntity(songId) {
     fun toDTO() = SongDTO(id.value, title, artist, discId, path, filename, searchString, duration, plays, lastPlayed)

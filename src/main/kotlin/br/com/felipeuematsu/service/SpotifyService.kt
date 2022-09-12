@@ -1,5 +1,7 @@
 package br.com.felipeuematsu.service
 
+import br.com.felipeuematsu.entity.ArtistImage
+import br.com.felipeuematsu.entity.ArtistImages
 import br.com.felipeuematsu.models.spotify.SearchResponseDTO
 import br.com.felipeuematsu.models.spotify.TokenResponseDTO
 import io.ktor.client.*
@@ -72,7 +74,17 @@ object SpotifyService {
     }
 
     fun searchImages(searchParam: String): String? {
+        ArtistImage.find { ArtistImages.name like "%$searchParam%" }.firstOrNull()?.let {
+            return it.url
+        }
         val response = search(searchParam, "artist",1)
-        return response.artists?.items?.firstOrNull()?.images?.firstOrNull()?.url
+        val url = response.artists?.items?.firstOrNull()?.images?.firstOrNull()?.url
+        url?.let {
+            ArtistImage.new {
+                name = searchParam
+                this.url = url
+            }
+        }
+        return url
     }
 }

@@ -43,11 +43,9 @@ object QueueService {
         QueueSong.all().toList().map(QueueSong::toDTO)
     }
 
-    fun removeFromQueue(songDTO: SongDTO, singerDTO: SingerDTO) {
+    fun removeFromQueue(id: Int) {
         transaction {
-            QueueSong.find {
-                (QueueSongs.singerId eq singerDTO.id) and (QueueSongs.songId eq songDTO.songId)
-            }.firstOrNull()?.delete()
+            QueueSong.findById(id)?.delete()
         }
     }
 

@@ -21,6 +21,7 @@ object KaraokeDatabase {
             SchemaUtils.create(CurrentSingers)
             SchemaUtils.create(Requests)
             SchemaUtils.create(Repositories)
+            SchemaUtils.create(ArtistImages)
         }
     }
 
