@@ -37,8 +37,11 @@ fun Application.configureRouting() {
         get("/search") {
             val title = call.request.queryParameters["title"]
             val artist = call.request.queryParameters["artist"]
+            val page = call.request.queryParameters["page"]?.toInt() ?: 1
+            val pageCount = call.request.queryParameters["pageCount"]?.toInt() ?: 10
             if (title != null || artist != null) {
-                call.respond(message = ApiService.search(title, artist))
+                val response = ApiService.search(title, artist, page, pageCount)
+                call.respond(message = response)
             } else {
                 call.respond(HttpStatusCode.BadRequest)
             }
@@ -215,6 +218,16 @@ fun Application.configureRouting() {
         get("/playing") {
             val songDTO = currentSong?.songId?.let { ApiService.getSong(it) } ?: return@get call.respond(HttpStatusCode.NotFound)
             call.respond(message = songDTO)
+        }
+
+        get("/singers") {
+            call.respond(SingerService.getSingers())
+        }
+
+        put("/singer") {
+            val singerDTO = call.receive<SingerDTO>()
+            val result = SingerService.updateSinger(singerDTO) ?: return@put call.respond(HttpStatusCode.NotFound)
+            call.respond(result)
         }
     }
 }

@@ -16,6 +16,14 @@ import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.javatime.timestamp
 import java.time.Instant
 
+@Serializable
+data class SongResponseDTO(
+    val page: Int,
+    val perPage: Int,
+    val total: Int,
+    val totalPages: Int,
+    val data: List<SongDTO>,
+)
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializer(forClass = Instant::class)

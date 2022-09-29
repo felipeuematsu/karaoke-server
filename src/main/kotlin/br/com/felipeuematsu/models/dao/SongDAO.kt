@@ -1,6 +1,7 @@
 package br.com.felipeuematsu.models.dao
 
 import br.com.felipeuematsu.entity.SongDTO
+import br.com.felipeuematsu.entity.SongResponseDTO
 import java.time.Instant
 
 interface SongDAO {
@@ -19,6 +20,6 @@ interface SongDAO {
         songId: Int, title: String, artist: String, duration: Int, plays: Int, lastPlayed: Instant?,
     ): Boolean
 
-    suspend fun searchSong(title: String?, artist: String?): List<SongDTO>
+    suspend fun searchSong(title: String?, artist: String?, page: Int, perPage: Int): SongResponseDTO
     suspend fun deleteAllSongs(): Int
 }

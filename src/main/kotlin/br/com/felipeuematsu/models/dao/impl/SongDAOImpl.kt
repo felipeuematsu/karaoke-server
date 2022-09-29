@@ -4,8 +4,10 @@ import br.com.felipeuematsu.database.KaraokeDatabase.dbQuery
 import br.com.felipeuematsu.entity.Song
 import br.com.felipeuematsu.entity.SongDTO
 import br.com.felipeuematsu.entity.DBSongs
+import br.com.felipeuematsu.entity.SongResponseDTO
 import br.com.felipeuematsu.models.dao.SongDAO
 import br.com.felipeuematsu.service.SpotifyService
+import br.com.felipeuematsu.service.forEachParallel
 import org.jetbrains.exposed.sql.*
 import java.time.Instant
 
@@ -72,22 +74,32 @@ class SongDAOImpl : SongDAO {
 
     override suspend fun deleteSong(id: Int): Boolean = dbQuery { DBSongs.deleteWhere { DBSongs.id eq id } > 0 }
 
-    override suspend fun searchSong(title: String?, artist: String?): List<SongDTO> = dbQuery {
-        val songs = if (title != null && artist != null) {
-            DBSongs.select { DBSongs.title like "%$title%" and (DBSongs.artist like "%$artist%") }
-                .map(::resultRowToSong).toList()
-        } else if (title != null) {
-            DBSongs.select { DBSongs.title like "%$title%" }
-                .map(::resultRowToSong).toList()
-        } else if (artist != null) {
-            DBSongs.select { DBSongs.artist like "%$artist%" }
-                .map(::resultRowToSong).toList()
-        } else {
-            listOf()
+    override suspend fun searchSong(title: String?, artist: String?, page: Int, perPage: Int): SongResponseDTO =
+        dbQuery {
+            val select =
+                if (title != null && artist != null) {
+                    DBSongs.select { DBSongs.title like "%$title%" and (DBSongs.artist like "%$artist%") }
+                } else if (title != null) {
+                    DBSongs.select { DBSongs.title like "%$title%" }
+                } else if (artist != null) {
+                    DBSongs.select { DBSongs.artist like "%$artist%" }
+                } else {
+                    null
+                }
+            val total = select?.count() ?: 0
+            val songs = select
+                ?.limit(perPage, ((page - 1) * perPage).toLong())
+                ?.map(::resultRowToSong)?.toList()
+                ?: emptyList()
+            songs.forEachParallel { it.imageUrl = SpotifyService.searchImages(it.artist) }
+            SongResponseDTO(
+                page = page,
+                data = select?.limit(perPage, ((page - 1) * perPage).toLong())?.map(::resultRowToSong)?.toList() ?: emptyList(),
+                total = total.toInt(),
+                perPage = perPage,
+                totalPages = (total / perPage + 1).toInt()
+            )
         }
-        songs.forEach { it.imageUrl = SpotifyService.searchImages(it.artist) }
-        songs
-    }
 
     override suspend fun deleteAllSongs(): Int = dbQuery {
         DBSongs.deleteAll()

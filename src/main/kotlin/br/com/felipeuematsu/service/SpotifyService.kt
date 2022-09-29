@@ -7,6 +7,7 @@ import br.com.felipeuematsu.models.spotify.TokenResponseDTO
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.cache.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
@@ -25,6 +26,7 @@ object SpotifyService {
     private const val baseUrl = "https://api.spotify.com/v1"
     private const val tokenUrl = "https://accounts.spotify.com/api/token"
     private val client = HttpClient(CIO) {
+        install(HttpCache)
         install(ContentNegotiation) {
             json(Json {
                 prettyPrint = true
@@ -40,11 +42,9 @@ object SpotifyService {
                 method = HttpMethod.Post
                 basicAuth(clientId, clientSecret)
                 setBody(
-                    FormDataContent(formData =
-                    Parameters.build {
+                    FormDataContent(Parameters.build {
                         append("grant_type", "client_credentials")
-                    }
-                    )
+                    })
                 )
             }
 
@@ -77,7 +77,7 @@ object SpotifyService {
         ArtistImage.find { ArtistImages.name like "%$searchParam%" }.firstOrNull()?.let {
             return it.url
         }
-        val response = search(searchParam, "artist",1)
+        val response = search(searchParam, "artist", 1)
         val url = response.artists?.items?.firstOrNull()?.images?.firstOrNull()?.url
         url?.let {
             ArtistImage.new {

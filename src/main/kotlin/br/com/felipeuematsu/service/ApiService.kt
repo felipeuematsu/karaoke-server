@@ -1,7 +1,6 @@
 package br.com.felipeuematsu.service
 
 import br.com.felipeuematsu.entity.*
-import br.com.felipeuematsu.models.State
 import br.com.felipeuematsu.models.dao.SongDAO
 import br.com.felipeuematsu.models.dao.StateDAO
 import br.com.felipeuematsu.models.dao.impl.SongDAOImpl
@@ -33,9 +32,9 @@ object ApiService {
         mapOf("error" to "true", "command" to "clearDatabase")
     }
 
-    fun search(title: String?, artist: String?): List<SongDTO> =
+    fun search(title: String?, artist: String?, page: Int, pageCount: Int): SongResponseDTO =
         runBlocking {
-            songDAO.searchSong(title, artist)
+            songDAO.searchSong(title, artist, page, pageCount)
         }
 
 

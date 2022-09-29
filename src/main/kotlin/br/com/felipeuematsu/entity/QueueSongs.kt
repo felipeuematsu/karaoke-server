@@ -11,12 +11,13 @@ data class QueueSongDTO(
     val singer: SingerDTO?,
     val song: SongDTO?,
     val position: Int?,
-    val keyChange: Int?
+    val keyChange: Int?,
+    val id: Int?,
 )
 
 class QueueSong(qsongid: EntityID<Int>) : IntEntity(qsongid) {
     fun toDTO(): QueueSongDTO {
-        return QueueSongDTO(Singer.findById(singer)?.toDTO(), Song.findById(song)?.toDTO(), position, keyChange)
+        return QueueSongDTO(Singer.findById(singer)?.toDTO(), Song.findById(song)?.toDTO(), position, keyChange, id.value)
     }
 
     companion object : IntEntityClass<QueueSong>(QueueSongs)
