@@ -1,18 +1,31 @@
 package br.com.felipeuematsu.service
 
 import br.com.felipeuematsu.entity.*
+import br.com.felipeuematsu.models.YoutubeSongDTO
 import br.com.felipeuematsu.models.dao.SongDAO
 import br.com.felipeuematsu.models.dao.StateDAO
 import br.com.felipeuematsu.models.dao.impl.SongDAOImpl
 import br.com.felipeuematsu.models.dao.impl.StateDAOImpl
 import br.com.felipeuematsu.models.request.add_songs.AddSongsResponseDTO
 import br.com.felipeuematsu.models.request.add_songs.NewSongDTO
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.cache.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.client.request.*
+import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.util.*
+import io.ktor.util.cio.*
+import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import org.jaudiotagger.audio.AudioFileIO
 import org.jetbrains.exposed.sql.deleteAll
+import org.jetbrains.exposed.sql.lowerCase
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.util.zip.ZipFile
@@ -109,6 +122,9 @@ object ApiService {
         e.message
     }
 
+    private fun getDownloadRepository(): Repository? = transaction {
+        Repository.find { Repositories.path.lowerCase() like "%downloads%" }.firstOrNull()
+    }
     fun getFolderRepositories(): List<Repository> = runBlocking {
         Repository.find { Repositories.path.isNotNull() }.toList()
     }
@@ -173,7 +189,42 @@ object ApiService {
             }
         }
     }
+        private val client = HttpClient(CIO) {
+            install(HttpCache)
+            install(ContentNegotiation) {
+                json(Json {
+                    prettyPrint = true
+                    isLenient = true
+                    ignoreUnknownKeys = true
+                })
+            }
+        }
+
+    @OptIn(InternalAPI::class)
+    suspend fun addYoutubeSong(dto: YoutubeSongDTO): String? {
+        val repo = getDownloadRepository() ?: return "No download repository set"
+
+        val res = client.get {
+            url(dto.url)
+            method = HttpMethod.Get
+        }
+
+        val file = File("${repo.path}/${dto.artist} - ${dto.title}.mp4")
+        res.call.response.content.copyAndClose(file.writeChannel())
+
+        Song.new {
+            title = dto.title!!
+            artist = dto.artist!!
+            duration = dto.duration!!
+            plays = 0
+            filename = "${dto.artist} - ${dto.title}.mp4"
+            path = file.absolutePath
+            searchString = "${dto.artist} - ${dto.title}.mp4 ${file.absolutePath}"
+        }
+        return null
+    }
 }
+
 
 fun <A> Collection<A>.forEachParallel(f: suspend (A) -> Unit): Unit = runBlocking {
     map { async { f(it) } }.forEach { it.await() }

@@ -1,6 +1,7 @@
 package br.com.felipeuematsu.plugins
 
 import br.com.felipeuematsu.entity.SingerDTO
+import br.com.felipeuematsu.models.YoutubeSongDTO
 import br.com.felipeuematsu.models.request.add_path.AddPathRequestDTO
 import br.com.felipeuematsu.models.request.add_songs.AddSongsRequestDTO
 import br.com.felipeuematsu.models.request.submit_request.SubmitRequestDTO
@@ -68,6 +69,14 @@ fun Application.configureRouting() {
             } ?: call.respond(HttpStatusCode.OK)
 
         }
+        post("/path/download") {
+            val path: String = call.receive()
+
+            ApiService.addFolderRepository("$path/download", "(.*) - (.*)", 1, 0)?.let {
+                call.respond(status = HttpStatusCode.BadRequest, message = it)
+            } ?: call.respond(HttpStatusCode.OK)
+
+        }
 
         post("/path/update") {
             call.respond(ApiService.updateFolderRepositories())
@@ -103,7 +112,10 @@ fun Application.configureRouting() {
         }
 
         delete("/queue/{queueSongId}") {
-            val queueSongId = call.parameters["queueSongId"]?.toIntOrNull() ?: return@delete call.respond(HttpStatusCode.BadRequest, "Invalid id")
+            val queueSongId = call.parameters["queueSongId"]?.toIntOrNull() ?: return@delete call.respond(
+                HttpStatusCode.BadRequest,
+                "Invalid id"
+            )
             call.respond(QueueService.removeFromQueue(queueSongId))
         }
 
@@ -216,7 +228,8 @@ fun Application.configureRouting() {
         }
 
         get("/playing") {
-            val songDTO = currentSong?.songId?.let { ApiService.getSong(it) } ?: return@get call.respond(HttpStatusCode.NotFound)
+            val songDTO =
+                currentSong?.songId?.let { ApiService.getSong(it) } ?: return@get call.respond(HttpStatusCode.NotFound)
             call.respond(message = songDTO)
         }
 
@@ -228,6 +241,13 @@ fun Application.configureRouting() {
             val singerDTO = call.receive<SingerDTO>()
             val result = SingerService.updateSinger(singerDTO) ?: return@put call.respond(HttpStatusCode.NotFound)
             call.respond(result)
+        }
+
+        post("/song/youtube") {
+            val youtubeSongDTO = call.receive<YoutubeSongDTO>()
+            val songDTO =
+                ApiService.addYoutubeSong(youtubeSongDTO) ?: return@post call.respond(HttpStatusCode.BadRequest)
+            call.respond(songDTO)
         }
     }
 }
