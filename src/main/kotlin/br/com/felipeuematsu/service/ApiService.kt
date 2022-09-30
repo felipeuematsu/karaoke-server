@@ -1,6 +1,11 @@
 package br.com.felipeuematsu.service
 
-import br.com.felipeuematsu.entity.*
+import br.com.felipeuematsu.entity.DBSongs
+import br.com.felipeuematsu.entity.Repositories
+import br.com.felipeuematsu.entity.Repository
+import br.com.felipeuematsu.entity.Song
+import br.com.felipeuematsu.entity.SongDTO
+import br.com.felipeuematsu.entity.SongResponseDTO
 import br.com.felipeuematsu.models.YoutubeSongDTO
 import br.com.felipeuematsu.models.dao.SongDAO
 import br.com.felipeuematsu.models.dao.StateDAO
@@ -123,8 +128,9 @@ object ApiService {
     }
 
     private fun getDownloadRepository(): Repository? = transaction {
-        Repository.find { Repositories.path.lowerCase() like "%downloads%" }.firstOrNull()
+        Repository.find { Repositories.path.lowerCase() like "%download%" }.firstOrNull()
     }
+
     fun getFolderRepositories(): List<Repository> = runBlocking {
         Repository.find { Repositories.path.isNotNull() }.toList()
     }
@@ -189,37 +195,49 @@ object ApiService {
             }
         }
     }
-        private val client = HttpClient(CIO) {
-            install(HttpCache)
-            install(ContentNegotiation) {
-                json(Json {
-                    prettyPrint = true
-                    isLenient = true
-                    ignoreUnknownKeys = true
-                })
-            }
+
+    private val client = HttpClient(CIO) {
+        install(HttpCache)
+        install(ContentNegotiation) {
+            json(Json {
+                prettyPrint = true
+                isLenient = true
+                ignoreUnknownKeys = true
+            })
         }
+    }
 
     @OptIn(InternalAPI::class)
     suspend fun addYoutubeSong(dto: YoutubeSongDTO): String? {
         val repo = getDownloadRepository() ?: return "No download repository set"
 
-        val res = client.get {
-            url(dto.url)
+        val url = dto.url ?: return "No url set"
+
+        val res = client.get(url) {
+
             method = HttpMethod.Get
         }
 
-        val file = File("${repo.path}/${dto.artist} - ${dto.title}.mp4")
+        val file = File("${repo.path}/${dto.artist?.replace("/", " ")} - ${dto.title?.replace("/", " ")}.mp4")
+
+        println(file.absolutePath)
+        if (!file.exists()) {
+            withContext(Dispatchers.IO) {
+                file.createNewFile()
+            }
+        }
         res.call.response.content.copyAndClose(file.writeChannel())
 
-        Song.new {
-            title = dto.title!!
-            artist = dto.artist!!
-            duration = dto.duration!!
-            plays = 0
-            filename = "${dto.artist} - ${dto.title}.mp4"
-            path = file.absolutePath
-            searchString = "${dto.artist} - ${dto.title}.mp4 ${file.absolutePath}"
+        transaction {
+            Song.new {
+                title = dto.title!!
+                artist = dto.artist!!
+                duration = dto.duration!!
+                plays = 0
+                filename = "${dto.artist} - ${dto.title}.mp4"
+                path = file.absolutePath
+                searchString = "${dto.artist} - ${dto.title}.mp4 ${file.absolutePath}"
+            }
         }
         return null
     }

@@ -245,9 +245,8 @@ fun Application.configureRouting() {
 
         post("/song/youtube") {
             val youtubeSongDTO = call.receive<YoutubeSongDTO>()
-            val songDTO =
-                ApiService.addYoutubeSong(youtubeSongDTO) ?: return@post call.respond(HttpStatusCode.BadRequest)
-            call.respond(songDTO)
+            val songDTO = ApiService.addYoutubeSong(youtubeSongDTO) ?: return@post call.respond(HttpStatusCode.OK)
+            call.respond(HttpStatusCode.BadRequest, songDTO)
         }
     }
 }
