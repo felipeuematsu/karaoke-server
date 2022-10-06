@@ -8,21 +8,19 @@ import br.com.felipeuematsu.entity.SongDTO
 import br.com.felipeuematsu.entity.SongResponseDTO
 import br.com.felipeuematsu.models.YoutubeSongDTO
 import br.com.felipeuematsu.models.dao.SongDAO
-import br.com.felipeuematsu.models.dao.StateDAO
 import br.com.felipeuematsu.models.dao.impl.SongDAOImpl
-import br.com.felipeuematsu.models.dao.impl.StateDAOImpl
 import br.com.felipeuematsu.models.request.add_songs.AddSongsResponseDTO
 import br.com.felipeuematsu.models.request.add_songs.NewSongDTO
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.cache.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
-import io.ktor.util.*
-import io.ktor.util.cio.*
-import io.ktor.utils.io.*
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.cache.HttpCache
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.get
+import io.ktor.http.HttpMethod
+import io.ktor.serialization.kotlinx.json.json
+import io.ktor.util.InternalAPI
+import io.ktor.util.cio.writeChannel
+import io.ktor.utils.io.copyAndClose
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -35,11 +33,9 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.util.zip.ZipFile
 
-
 object ApiService {
     private val logger = org.slf4j.LoggerFactory.getLogger(ApiService::class.java)
     private val songDAO: SongDAO = SongDAOImpl()
-    private val stateDAO: StateDAO = StateDAOImpl()
 
     fun clearDatabase(): Map<String, String> = try {
         runBlocking {
@@ -213,12 +209,14 @@ object ApiService {
 
         val url = dto.url ?: return "No url set"
 
+        if (dto.title == null || dto.artist == null || dto.duration == null) {
+            return "Title, artist or duration is null"
+        }
         val res = client.get(url) {
-
             method = HttpMethod.Get
         }
 
-        val file = File("${repo.path}/${dto.artist?.replace("/", " ")} - ${dto.title?.replace("/", " ")}.mp4")
+        val file = File("${repo.path}/${dto.artist.replace("/", " ")} - ${dto.title.replace("/", " ")}.mp4")
 
         println(file.absolutePath)
         if (!file.exists()) {
@@ -230,9 +228,9 @@ object ApiService {
 
         transaction {
             Song.new {
-                title = dto.title!!
-                artist = dto.artist!!
-                duration = dto.duration!!
+                title = dto.title
+                artist = dto.artist
+                duration = dto.duration
                 plays = 0
                 filename = "${dto.artist} - ${dto.title}.mp4"
                 path = file.absolutePath

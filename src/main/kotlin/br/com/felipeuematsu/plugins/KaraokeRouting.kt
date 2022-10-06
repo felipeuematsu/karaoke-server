@@ -27,8 +27,13 @@ fun Application.configureRouting() {
         var webSocketSession: DefaultWebSocketSession? = null
         webSocket {
             webSocketSession = this
+
             while (isActive) {
-                currentSong = receiveDeserialized<CurrentSongDTO>()
+                try {
+                    currentSong = receiveDeserialized<CurrentSongDTO>()
+                } catch (e: Exception) {
+                    println("Error receiving current song: ${e.message}")
+                }
             }
             println("Session started successfully")
         }
@@ -229,8 +234,10 @@ fun Application.configureRouting() {
 
         get("/playing") {
             val songDTO =
-                currentSong?.songId?.let { ApiService.getSong(it) } ?: return@get call.respond(HttpStatusCode.NotFound)
-            call.respond(message = songDTO)
+                currentSong?.songId?.let { ApiService.getSong(it) } ?: return@get call.respond(HttpStatusCode.NoContent)
+            currentSong = currentSong?.copy(song = songDTO)
+            val playingDTO = currentSong ?: return@get call.respond(HttpStatusCode.NoContent)
+            call.respond(playingDTO)
         }
 
         get("/singers") {
@@ -247,6 +254,15 @@ fun Application.configureRouting() {
             val youtubeSongDTO = call.receive<YoutubeSongDTO>()
             val songDTO = ApiService.addYoutubeSong(youtubeSongDTO) ?: return@post call.respond(HttpStatusCode.OK)
             call.respond(HttpStatusCode.BadRequest, songDTO)
+        }
+
+        post("/skip") {
+            val session = webSocketSession ?: return@post call.respond(
+                HttpStatusCode.FailedDependency,
+                "No WebSocket session found. Try opening the player again."
+            )
+            session.send(Frame.Text("skip"))
+            call.respond(HttpStatusCode.NoContent)
         }
     }
 }
