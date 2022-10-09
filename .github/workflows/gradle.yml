@@ -27,6 +27,8 @@ jobs:
       with:
         java-version: '11'
         distribution: 'temurin'
+    - name: Make gradlew executable
+      run: chmod +x ./gradlew
     - name: Run build script
       run: ./gradlew build -x test
       shell: bash
