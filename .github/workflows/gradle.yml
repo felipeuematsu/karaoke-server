@@ -27,8 +27,6 @@ jobs:
       with:
         java-version: '11'
         distribution: 'temurin'
-    - name: GitHub Script
-      uses: actions/github-script@v6.3.1
-      with:
-        script: ./gradlew build -x test
-      
+    - name: Run build script
+      run: ./gradlew build -x test
+      shell: bash
