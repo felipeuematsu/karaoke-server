@@ -103,7 +103,7 @@ fun Application.configureRouting() {
 
         get("/images/{search}") {
             val search = call.parameters["search"] ?: return@get call.respond(HttpStatusCode.BadRequest)
-            val image = SpotifyService.searchImages(search) ?: return@get call.respond(HttpStatusCode.NotFound)
+            val image = SpotifyService.searchArtistImages(search) ?: return@get call.respond(HttpStatusCode.NotFound)
 
             call.respondText { image }
         }

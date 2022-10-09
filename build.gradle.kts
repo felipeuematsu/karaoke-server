@@ -16,12 +16,9 @@ plugins {
 }
 
 group = "br.com.felipeuematsu"
-version = "0.0.1"
+version = "1.1.0"
 application {
     mainClass.set("br.com.felipeuematsu.ApplicationKt")
-
-    val isDevelopment: Boolean = true
-    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
 repositories {

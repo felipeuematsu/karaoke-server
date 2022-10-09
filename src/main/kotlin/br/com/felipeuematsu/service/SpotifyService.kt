@@ -2,6 +2,8 @@ package br.com.felipeuematsu.service
 
 import br.com.felipeuematsu.entity.ArtistImage
 import br.com.felipeuematsu.entity.ArtistImages
+import br.com.felipeuematsu.entity.TrackImage
+import br.com.felipeuematsu.entity.TrackImages
 import br.com.felipeuematsu.models.spotify.SearchResponseDTO
 import br.com.felipeuematsu.models.spotify.TokenResponseDTO
 import io.ktor.client.*
@@ -15,6 +17,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.sql.and
 import java.time.LocalDateTime
 
 object SpotifyService {
@@ -73,7 +76,24 @@ object SpotifyService {
         }
     }
 
-    fun searchImages(searchParam: String): String? {
+    fun searchSongImage(song: String, artist: String): String? {
+        TrackImage.find { (TrackImages.title like song) and (TrackImages.artist like artist) }.firstOrNull()?.let {
+            return it.url
+        }
+        val filteredSong = song.split('[').first().trim()
+        val response = search("track:$filteredSong artist:$artist", "track", 1)
+        val url = response.tracks?.items?.firstOrNull()?.album?.images?.firstOrNull()?.url
+        url?.let {
+            TrackImage.new {
+                this.title = song
+                this.artist = artist
+                this.url = url
+            }
+        }
+        return url
+    }
+
+    fun searchArtistImages(searchParam: String): String? {
         ArtistImage.find { ArtistImages.name like "%$searchParam%" }.firstOrNull()?.let {
             return it.url
         }

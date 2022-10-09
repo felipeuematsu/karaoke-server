@@ -66,7 +66,7 @@ object PlaylistsService {
                         .map(Song::wrapRow)
                 )
                 if (artistPlaylist.imageUrl == null) {
-                    artistPlaylist.imageUrl = SpotifyService.searchImages(it)
+                    artistPlaylist.imageUrl = SpotifyService.searchArtistImages(it)
                 }
                 response.add(artistPlaylist.toDTO())
             }
@@ -80,6 +80,8 @@ object PlaylistsService {
     }
 
     fun getPlaylist(id: Int): PlaylistDTO? = transaction {
-        Playlist.findById(id)?.toDTO()
+        Playlist.findById(id)?.toDTO()?.apply {
+            songs.map { it.imageUrl = SpotifyService.searchSongImage(it.title, it.artist) ?: SpotifyService.searchArtistImages(it.artist) }
+        }
     }
 }

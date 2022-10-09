@@ -22,6 +22,7 @@ object KaraokeDatabase {
             SchemaUtils.create(Requests)
             SchemaUtils.create(Repositories)
             SchemaUtils.create(ArtistImages)
+            SchemaUtils.create(TrackImages)
         }
     }
 
