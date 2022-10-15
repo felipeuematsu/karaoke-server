@@ -45,12 +45,12 @@ fun Application.configureRouting() {
             val artist = call.request.queryParameters["artist"]
             val page = call.request.queryParameters["page"]?.toInt() ?: 1
             val pageCount = call.request.queryParameters["pageCount"]?.toInt() ?: 10
-            if (title != null || artist != null) {
-                val response = ApiService.search(title, artist, page, pageCount)
-                call.respond(message = response)
-            } else {
-                call.respond(HttpStatusCode.BadRequest)
+            if (title == null && artist == null) {
+                return@get call.respond(HttpStatusCode.BadRequest)
             }
+            val response = ApiService.search(title, artist, page, pageCount)
+            call.respond(message = response)
+
         }
         post("/connectionTest") {
             call.respond(message = ApiService.connectionTest())
