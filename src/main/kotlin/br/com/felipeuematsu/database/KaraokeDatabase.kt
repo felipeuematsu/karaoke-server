@@ -9,7 +9,8 @@ import org.jetbrains.exposed.sql.transactions.experimental.*
 object KaraokeDatabase {
     fun init() {
         val driverClassName = "org.sqlite.JDBC"
-        val jdbcURL = "jdbc:mysql://root@password:localhost:3306/karaoke?useSSL=false&serverTimezone=UTC"
+        val currentDir = System.getProperty("user.dir")
+        val jdbcURL = "jdbc:sqlite:file:$currentDir/karaoke.sqlite"
         val database = Database.connect(jdbcURL, driverClassName)
         transaction(database) {
             SchemaUtils.create(DBSongs)
