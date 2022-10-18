@@ -38,6 +38,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
     implementation("org.jetbrains.exposed:exposed-java-time:$exposed_version")
     implementation("org.xerial:sqlite-jdbc:$sqlite_version")
+    implementation("mysql:mysql-connector-java:5.7.35")
     implementation("org.ktorm:ktorm-core:$ktorm_version")
     implementation("io.ktor:ktor-client:$ktor_client")
     implementation("io.ktor:ktor-client-core:$ktor_client_core")
