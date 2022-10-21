@@ -37,3 +37,7 @@ out/
 
 ### Karaoke Database ###
 karaoke.sqlite
+
+### Flutter compile time ###
+flutter_resources/
+temp/
