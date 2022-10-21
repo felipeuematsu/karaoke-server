@@ -1,3 +1,8 @@
+import groovy.json.JsonSlurper
+import java.net.URL
+import java.util.Base64
+import java.util.zip.ZipFile
+
 val ktor_version: String by project
 val kotlin_version: String by project
 val logback_version: String by project
@@ -8,6 +13,7 @@ val ktor_client: String by project
 val ktor_client_core: String by project
 val ktor_server_websockets: String by project
 val tika_version: String by project
+val spa_version: String by project
 
 plugins {
     application
@@ -16,7 +22,7 @@ plugins {
 }
 
 group = "br.com.felipeuematsu"
-version = "1.1.0"
+version = "1.2.0"
 application {
     mainClass.set("br.com.felipeuematsu.ApplicationKt")
 }
@@ -48,4 +54,80 @@ dependencies {
     implementation("org:jaudiotagger:2.0.3")
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
+}
+abstract class SetupSpaTask : DefaultTask() {
+    @get:Input
+    abstract val spaVersion: Property<String>
+
+    @TaskAction
+    fun setupSpa() {
+        val username = "felipeuematsu"
+        val password = System.getenv("API_PASSWORD")
+
+        val token = Base64.getEncoder().encodeToString("$username:$password".toByteArray())
+        val releasesUrl = "https://api.github.com/repos/felipeuematsu/karaoke-request-client/releases"
+
+        val spaDir = File("flutter_resources")
+
+        val dataResponse = URL(releasesUrl).openConnection().apply {
+            setRequestProperty(
+                "Authorization",
+                "Basic $token"
+            )
+        }.getInputStream().readBytes().toString(Charsets.UTF_8)
+        val json = JsonSlurper().parseText(dataResponse) as List<Map<String, Any>>
+
+        val release = json.first { it["tag_name"] == spaVersion.get() }
+
+        val assets = release["assets"] as List<Map<String, String>>
+        val asset = assets.first { it["name"]?.contains(".zip") == true }
+        val assetUrl = asset["browser_download_url"] ?: return println("Asset not found")
+
+        if (!spaDir.exists()) {
+            println("Creating flutter_resources directory")
+            spaDir.mkdirs()
+            println("flutter_resources directory created successfully")
+        }
+
+        val zipFile = File("temp/web.zip")
+        val lockFile = File("temp/web.lock")
+        if (!zipFile.exists() || !lockFile.exists() || (lockFile.readText() != spaVersion.get())) {
+            println("Creating Dirs")
+            zipFile.parentFile.mkdirs()
+            println("Downloading SPA")
+            zipFile.createNewFile()
+            if (!lockFile.exists()) {
+                lockFile.createNewFile()
+            }
+            println("Downloading SPA version ${spaVersion.get()}")
+            println(assetUrl)
+            val assetDownloadUrl = URL(assetUrl)
+            val inputStream = assetDownloadUrl.openConnection().getInputStream()
+
+            println("Writing to file")
+            zipFile.writeBytes(inputStream.readBytes())
+
+            lockFile.writeText(spaVersion.get())
+            println("Downloaded SPA version ${spaVersion.get()}")
+        }
+
+        println("Extracting SPA version ${spaVersion.get()}")
+
+        val zip = ZipFile(zipFile)
+        zip.entries().asSequence().forEach { entry ->
+            val fileName = entry.name.replace("build/web/", "")
+            val file = File(spaDir, fileName)
+            if (entry.isDirectory) {
+                file.mkdirs()
+            } else {
+                file.outputStream().use { zip.getInputStream(entry).copyTo(it) }
+            }
+        }
+        println("Extracted SPA version ${spaVersion.get()}")
+
+    }
+}
+
+tasks.register<SetupSpaTask>("setupSpa") {
+    spaVersion.set(spa_version)
 }

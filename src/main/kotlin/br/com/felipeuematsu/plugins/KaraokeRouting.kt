@@ -6,16 +6,30 @@ import br.com.felipeuematsu.models.request.add_path.AddPathRequestDTO
 import br.com.felipeuematsu.models.request.add_songs.AddSongsRequestDTO
 import br.com.felipeuematsu.models.request.submit_request.SubmitRequestDTO
 import br.com.felipeuematsu.models.response.CurrentSongDTO
-import br.com.felipeuematsu.service.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.*
-import io.ktor.server.application.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
-import io.ktor.server.websocket.*
-import io.ktor.websocket.*
-import io.ktor.websocket.serialization.*
+import br.com.felipeuematsu.service.ApiService
+import br.com.felipeuematsu.service.PlaylistsService
+import br.com.felipeuematsu.service.QueueService
+import br.com.felipeuematsu.service.SingerService
+import br.com.felipeuematsu.service.SpotifyService
+import io.ktor.http.HttpStatusCode
+import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
+import io.ktor.server.application.Application
+import io.ktor.server.application.call
+import io.ktor.server.http.content.react
+import io.ktor.server.http.content.singlePageApplication
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.put
+import io.ktor.server.routing.routing
+import io.ktor.server.websocket.receiveDeserialized
+import io.ktor.server.websocket.webSocket
+import io.ktor.websocket.DefaultWebSocketSession
+import io.ktor.websocket.Frame
+import io.ktor.websocket.serialization.sendSerializedBase
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.Json
 import java.nio.charset.Charset
@@ -24,6 +38,10 @@ fun Application.configureRouting() {
     var currentSong: CurrentSongDTO? = null
 
     routing {
+        singlePageApplication {
+            react("flutter_resources")
+        }
+
         var webSocketSession: DefaultWebSocketSession? = null
         webSocket {
             webSocketSession = this
