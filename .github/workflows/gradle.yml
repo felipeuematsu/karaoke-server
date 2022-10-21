@@ -29,7 +29,10 @@ jobs:
         distribution: 'temurin'
     - name: Make gradlew executable
       run: chmod +x ./gradlew
-    - name: Run build script
+    - name: Setup SPA files
+      run: ./gradlew setupSpa
+      shell: bash    
+    - name: Build distribution files
       run: ./gradlew build -x test
       shell: bash
     - name: Upload a Build Artifact
