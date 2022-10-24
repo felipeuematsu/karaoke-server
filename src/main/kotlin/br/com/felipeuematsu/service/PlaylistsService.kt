@@ -17,6 +17,10 @@ object PlaylistsService {
                 .select { DBSongs.plays greater 0 }
                 .orderBy(DBSongs.plays to SortOrder.DESC)
                 .limit(50)
+                .sortedBy {
+                    it[DBSongs.plays]
+                    it[DBSongs.lastPlay]
+                }
                 .map(Song::wrapRow)
         )
         top50.toDTO()
@@ -30,7 +34,9 @@ object PlaylistsService {
             DBSongs
                 .select { DBSongs.plays greater 0 }
                 .orderBy(DBSongs.lastPlay to SortOrder.DESC)
-                .limit(50).map(Song::wrapRow)
+                .limit(50)
+                .sortedBy { it[DBSongs.lastPlay] }
+                .map(Song::wrapRow)
         )
         last50.toDTO()
     }
@@ -63,6 +69,10 @@ object PlaylistsService {
                     DBSongs.select { DBSongs.artist eq it }
                         .orderBy(DBSongs.plays to SortOrder.DESC)
                         .limit(50)
+                        .sortedBy {
+                            it[DBSongs.plays]
+                            it[DBSongs.lastPlay]
+                        }
                         .map(Song::wrapRow)
                 )
                 if (artistPlaylist.imageUrl == null) {
@@ -76,12 +86,23 @@ object PlaylistsService {
     }
 
     fun getPlaylists(): List<PlaylistDTO> = transaction {
+        listOf(
+            Playlist.find { Playlists.name eq "Top 50" }.first().toDTO(),
+            Playlist.find { Playlists.name eq "Last 50" }.first().toDTO(),
+            *Playlist.find { Playlists.name notInList listOf("Top 50", "Last 50") }
+                .limit(5)
+                .map { it.toDTO() }
+                .toTypedArray()
+        )
         SimplePlaylist.all().map(SimplePlaylist::toDTO)
     }
 
     fun getPlaylist(id: Int): PlaylistDTO? = transaction {
         Playlist.findById(id)?.toDTO()?.apply {
-            songs.map { it.imageUrl = SpotifyService.searchSongImage(it.title, it.artist) ?: SpotifyService.searchArtistImages(it.artist) }
+            songs.map {
+                it.imageUrl =
+                    SpotifyService.searchSongImage(it.title, it.artist) ?: SpotifyService.searchArtistImages(it.artist)
+            }
         }
     }
 }
