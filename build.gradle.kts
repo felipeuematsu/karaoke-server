@@ -27,6 +27,22 @@ application {
     mainClass.set("br.com.felipeuematsu.ApplicationKt")
 }
 
+distributions {
+    main {
+        contents {
+            from("flutter_resources") {
+                into("bin/flutter_resources")
+            }
+        }
+    }
+}
+
+tasks {
+    build {
+        dependsOn("setupSpa")
+    }
+}
+
 repositories {
     mavenCentral()
     maven { url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap") }
@@ -55,6 +71,7 @@ dependencies {
     testImplementation("io.ktor:ktor-server-tests-jvm:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
+
 abstract class SetupSpaTask : DefaultTask() {
     @get:Input
     abstract val spaVersion: Property<String>
@@ -78,11 +95,8 @@ abstract class SetupSpaTask : DefaultTask() {
         val json = JsonSlurper().parseText(dataResponse) as List<Map<String, Any>>
 
         val release = json.firstOrNull { it["tag_name"] == spaVersion.get() }
+            ?: return println("No release found for version ${spaVersion.get()}")
 
-        if (release == null) {
-            throw Exception("Version ${spaVersion.get()} not found. Available versions: ${json.map {it["tag_name"] }}")
-        }
-        
         val assets = release["assets"] as List<Map<String, String>>
         val asset = assets.first { it["name"]?.contains(".zip") == true }
         val assetUrl = asset["browser_download_url"] ?: return println("Asset not found")
@@ -131,7 +145,4 @@ abstract class SetupSpaTask : DefaultTask() {
 
     }
 }
-
-tasks.register<SetupSpaTask>("setupSpa") {
-    spaVersion.set(spa_version)
-}
+tasks.register<SetupSpaTask>("setupSpa") { spaVersion.set(spa_version) }
