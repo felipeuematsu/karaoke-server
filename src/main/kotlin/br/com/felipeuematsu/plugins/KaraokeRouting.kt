@@ -39,6 +39,10 @@ fun Application.configureRouting() {
     var currentSong: CurrentSongDTO? = null
 
     routing {
+        get("/health") {
+            call.respondText("OK", status = HttpStatusCode.OK)
+        }
+
         get("/.well-known/assetlinks.json") {
             call.respondText(
                 File("resources/assetlinks.json").readText(Charset.defaultCharset()),

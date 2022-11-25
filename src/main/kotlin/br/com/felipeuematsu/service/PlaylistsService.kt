@@ -89,12 +89,10 @@ object PlaylistsService {
         listOf(
             Playlist.find { Playlists.name eq "Top 50" }.firstOrNull()?.toDTO(),
             Playlist.find { Playlists.name eq "Last 50" }.firstOrNull()?.toDTO(),
-            Playlist.find { Playlists.name notInList listOf("Top 50", "Last 50") }
+            *Playlist.find { Playlists.name notInList listOf("Top 50", "Last 50") }
                 .limit(5)
-                .map { it.toDTO() }
-                .toTypedArray()
-        )
-        SimplePlaylist.all().map(SimplePlaylist::toDTO)
+                .map { it.toDTO() }.toList().toTypedArray()
+        ).requireNoNulls()
     }
 
     fun getPlaylist(id: Int): PlaylistDTO? = transaction {
