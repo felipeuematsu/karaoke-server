@@ -21,8 +21,8 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "1.7.0"
 }
 
-group = "br.com.felipeuematsu"
-version = "1.2.0"
+group = "dev.felipeuematsu"
+version = "1.2.1"
 application {
     mainClass.set("br.com.felipeuematsu.ApplicationKt")
 }
@@ -32,6 +32,9 @@ distributions {
         contents {
             from("flutter_resources") {
                 into("bin/flutter_resources")
+            }
+            from("resources") {
+                into("bin/resources")
             }
         }
     }

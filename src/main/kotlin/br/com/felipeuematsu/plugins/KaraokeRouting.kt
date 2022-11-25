@@ -32,12 +32,20 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.serialization.sendSerializedBase
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.Json
+import java.io.File
 import java.nio.charset.Charset
 
 fun Application.configureRouting() {
     var currentSong: CurrentSongDTO? = null
 
     routing {
+        get("/.well-known/assetlinks.json") {
+            call.respondText(
+                File("resources/assetlinks.json").readText(Charset.defaultCharset()),
+                contentType = io.ktor.http.ContentType.Application.Json
+            )
+        }
+
         singlePageApplication {
             react("flutter_resources")
         }

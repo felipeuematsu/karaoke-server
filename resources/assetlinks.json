@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "dev.felipeuematsu.flup_karaoke",
+      "sha256_cert_fingerprints": [
+        "06:4B:62:BC:D2:75:AD:3E:C5:CE:D5:17:DD:64:E8:8E:41:DD:C9:B0:85:A4:B6:74:4F:6B:08:68:6B:F7:A8:2C"
+      ]
+    }
+  }
+]
