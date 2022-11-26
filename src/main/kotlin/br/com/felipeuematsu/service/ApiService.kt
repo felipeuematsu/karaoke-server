@@ -30,11 +30,12 @@ import org.jaudiotagger.audio.AudioFileIO
 import org.jetbrains.exposed.sql.deleteAll
 import org.jetbrains.exposed.sql.lowerCase
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.zip.ZipFile
 
 object ApiService {
-    private val logger = org.slf4j.LoggerFactory.getLogger(ApiService::class.java)
+    private val logger = LoggerFactory.getLogger(ApiService::class.java)
     private val songDAO: SongDAO = SongDAOImpl()
 
     fun clearDatabase(): Map<String, String> = try {

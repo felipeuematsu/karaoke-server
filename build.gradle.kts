@@ -22,7 +22,7 @@ plugins {
 }
 
 group = "dev.felipeuematsu"
-version = "1.3.0"
+version = "1.3.2"
 application {
     mainClass.set("br.com.felipeuematsu.ApplicationKt")
 }

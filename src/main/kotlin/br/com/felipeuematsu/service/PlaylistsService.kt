@@ -5,6 +5,8 @@ import org.jetbrains.exposed.sql.SizedCollection
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 object PlaylistsService {
 
@@ -17,12 +19,10 @@ object PlaylistsService {
                 .select { DBSongs.plays greater 0 }
                 .orderBy(DBSongs.plays to SortOrder.DESC)
                 .limit(50)
-                .sortedBy {
-                    it[DBSongs.plays]
-                    it[DBSongs.lastPlay]
-                }
+                .sortedByDescending { it[DBSongs.lastPlay]; it[DBSongs.plays] }
                 .map(Song::wrapRow)
         )
+        top50.lastUpdated = LocalDateTime.now()
         top50.toDTO()
     }
 
@@ -38,6 +38,7 @@ object PlaylistsService {
                 .sortedBy { it[DBSongs.lastPlay] }
                 .map(Song::wrapRow)
         )
+        last50.lastUpdated = LocalDateTime.now()
         last50.toDTO()
     }
 
@@ -56,7 +57,6 @@ object PlaylistsService {
             .map(Song::wrapRow)
             .map { it.artist }
 
-        print(top5Artists)
         val response = mutableListOf<PlaylistDTO>()
 
         top5Artists.forEach {
@@ -69,12 +69,10 @@ object PlaylistsService {
                     DBSongs.select { DBSongs.artist eq it }
                         .orderBy(DBSongs.plays to SortOrder.DESC)
                         .limit(50)
-                        .sortedBy {
-                            it[DBSongs.plays]
-                            it[DBSongs.lastPlay]
-                        }
+                        .sortedByDescending { it[DBSongs.lastPlay]; it[DBSongs.plays] }
                         .map(Song::wrapRow)
                 )
+                artistPlaylist.lastUpdated = LocalDateTime.now()
                 if (artistPlaylist.imageUrl == null) {
                     artistPlaylist.imageUrl = SpotifyService.searchArtistImages(it)
                 }
@@ -86,20 +84,33 @@ object PlaylistsService {
     }
 
     fun getPlaylists(): List<PlaylistDTO> = transaction {
-        listOf(
-            Playlist.find { Playlists.name eq "Top 50" }.firstOrNull()?.toDTO(),
-            Playlist.find { Playlists.name eq "Last 50" }.firstOrNull()?.toDTO(),
+        val top50 = Playlist.find { Playlists.name eq "Top 50" }.firstOrNull()?.toDTO()
+        val last50 = Playlist.find { Playlists.name eq "Last 50" }.firstOrNull()?.toDTO()
+        listOfNotNull(
+            top50?.copy(songs = top50.songs.sortedByDescending { it.lastPlayed; it.plays }.toList()),
+            last50?.copy(songs = last50.songs.sortedByDescending { it.lastPlayed }.toList()),
             *Playlist.find { Playlists.name notInList listOf("Top 50", "Last 50") }
                 .limit(5)
+                .sortedByDescending { it.songs.count(); it.lastUpdated }
                 .map { it.toDTO() }.toList().toTypedArray()
-        ).requireNoNulls()
+        )
     }
 
     fun getPlaylist(id: Int): PlaylistDTO? = transaction {
-        Playlist.findById(id)?.toDTO()?.apply {
+        var playlistDTO = Playlist.findById(id)?.toDTO()
+        if (playlistDTO?.name == "Last 50") {
+            val songs = playlistDTO.songs.apply { sortedByDescending { it.lastPlayed } }
+            playlistDTO = playlistDTO.copy(songs = songs)
+        } else {
+            val songs = playlistDTO?.songs?.sortedByDescending { it.lastPlayed; it.plays }
+            playlistDTO =
+                songs?.let { playlistDTO?.copy(songs = it) }
+        }
+        playlistDTO?.apply {
             songs.map {
                 it.imageUrl =
-                    SpotifyService.searchSongImage(it.title, it.artist) ?: SpotifyService.searchArtistImages(it.artist)
+                    SpotifyService.searchSongImage(it.title, it.artist)
+                        ?: SpotifyService.searchArtistImages(it.artist)
             }
         }
     }
