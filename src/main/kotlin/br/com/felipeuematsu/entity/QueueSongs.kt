@@ -1,5 +1,6 @@
 package br.com.felipeuematsu.entity
 
+import br.com.felipeuematsu.service.SpotifyService
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
@@ -17,7 +18,13 @@ data class QueueSongDTO(
 
 class QueueSong(qsongid: EntityID<Int>) : IntEntity(qsongid) {
     fun toDTO(): QueueSongDTO {
-        return QueueSongDTO(Singer.findById(singer)?.toDTO(), Song.findById(song)?.toDTO(), position, keyChange, id.value)
+        return QueueSongDTO(
+            Singer.findById(singer)?.toDTO(),
+            Song.findById(song)?.toDTO()?.apply { imageUrl = SpotifyService.searchSongImage(title, artist) },
+            position,
+            keyChange,
+            id.value,
+        )
     }
 
     companion object : IntEntityClass<QueueSong>(QueueSongs)
