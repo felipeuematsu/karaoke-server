@@ -44,6 +44,9 @@ tasks {
     build {
         dependsOn("setupSpa")
     }
+    installDist {
+        dependsOn("setupSpa")
+    }
 }
 
 repositories {
