@@ -5,10 +5,9 @@ import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.javatime.date
-import org.jetbrains.exposed.sql.javatime.datetime
-import java.time.LocalDate
+import org.jetbrains.exposed.sql.javatime.timestamp
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @Serializable
 data class PlaylistDTO(
@@ -38,5 +37,5 @@ object Playlists : IntIdTable("playlists") {
     val userName = varchar("user_name", 255)
     val description = varchar("description", 255).nullable()
     val imageUrl = varchar("image_url", 1023).nullable()
-    val lastUpdated = datetime("last_updated").default(LocalDateTime.now())
+    val lastUpdated = timestamp("last_updated").default(LocalDateTime.now().toInstant(ZoneOffset.UTC))
 }

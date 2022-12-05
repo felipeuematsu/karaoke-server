@@ -22,7 +22,7 @@ plugins {
 }
 
 group = "dev.felipeuematsu"
-version = "1.3.2"
+version = "1.4.0"
 application {
     mainClass.set("br.com.felipeuematsu.ApplicationKt")
 }
@@ -101,8 +101,9 @@ abstract class SetupSpaTask : DefaultTask() {
             ?: return println("No release found for version ${spaVersion.get()}")
 
         val assets = release["assets"] as List<Map<String, String>>
-        val asset = assets.first { it["name"]?.contains(".zip") == true }
-        val assetUrl = asset["browser_download_url"] ?: return println("Asset not found")
+        val asset = assets.firstOrNull { it["name"]?.contains(".zip") == true }
+            ?: throw Exception("No release file found for version ${spaVersion.get()}")
+        val assetUrl = asset["browser_download_url"] ?: throw Exception("Asset not found")
 
         if (!spaDir.exists()) {
             println("Creating flutter_resources directory")
@@ -110,8 +111,9 @@ abstract class SetupSpaTask : DefaultTask() {
             println("flutter_resources directory created successfully")
         }
 
-        val zipFile = File("temp/web.zip")
-        val lockFile = File("temp/web.lock")
+        val currentDir = System.getProperty("user.dir")
+        val zipFile = File("${currentDir}/temp/web.zip")
+        val lockFile = File("${currentDir}/temp/web.lock")
         if (!zipFile.exists() || !lockFile.exists() || (lockFile.readText() != spaVersion.get())) {
             println("Creating Dirs")
             zipFile.parentFile.mkdirs()
@@ -145,7 +147,6 @@ abstract class SetupSpaTask : DefaultTask() {
             }
         }
         println("Extracted SPA version ${spaVersion.get()}")
-
     }
 }
 tasks.register<SetupSpaTask>("setupSpa") { spaVersion.set(spa_version) }

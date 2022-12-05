@@ -1,12 +1,16 @@
 package br.com.felipeuematsu.service
 
-import br.com.felipeuematsu.entity.*
+import br.com.felipeuematsu.entity.DBSongs
+import br.com.felipeuematsu.entity.Playlist
+import br.com.felipeuematsu.entity.PlaylistDTO
+import br.com.felipeuematsu.entity.Playlists
+import br.com.felipeuematsu.entity.Song
 import org.jetbrains.exposed.sql.SizedCollection
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 object PlaylistsService {
 
@@ -22,7 +26,7 @@ object PlaylistsService {
                 .sortedByDescending { it[DBSongs.lastPlay]; it[DBSongs.plays] }
                 .map(Song::wrapRow)
         )
-        top50.lastUpdated = LocalDateTime.now()
+        top50.lastUpdated = LocalDateTime.now().toInstant(ZoneOffset.UTC)
         top50.toDTO()
     }
 
@@ -38,7 +42,7 @@ object PlaylistsService {
                 .sortedBy { it[DBSongs.lastPlay] }
                 .map(Song::wrapRow)
         )
-        last50.lastUpdated = LocalDateTime.now()
+        last50.lastUpdated = LocalDateTime.now().toInstant(ZoneOffset.UTC)
         last50.toDTO()
     }
 
@@ -72,7 +76,7 @@ object PlaylistsService {
                         .sortedByDescending { it[DBSongs.lastPlay]; it[DBSongs.plays] }
                         .map(Song::wrapRow)
                 )
-                artistPlaylist.lastUpdated = LocalDateTime.now()
+                artistPlaylist.lastUpdated = LocalDateTime.now().toInstant(ZoneOffset.UTC)
                 if (artistPlaylist.imageUrl == null) {
                     artistPlaylist.imageUrl = SpotifyService.searchArtistImages(it)
                 }
@@ -98,13 +102,12 @@ object PlaylistsService {
 
     fun getPlaylist(id: Int): PlaylistDTO? = transaction {
         var playlistDTO = Playlist.findById(id)?.toDTO()
-        if (playlistDTO?.name == "Last 50") {
+        playlistDTO = if (playlistDTO?.name == "Last 50") {
             val songs = playlistDTO.songs.apply { sortedByDescending { it.lastPlayed } }
-            playlistDTO = playlistDTO.copy(songs = songs)
+            playlistDTO.copy(songs = songs)
         } else {
             val songs = playlistDTO?.songs?.sortedByDescending { it.lastPlayed; it.plays }
-            playlistDTO =
-                songs?.let { playlistDTO?.copy(songs = it) }
+            songs?.let { playlistDTO?.copy(songs = it) }
         }
         playlistDTO?.apply {
             songs.map {

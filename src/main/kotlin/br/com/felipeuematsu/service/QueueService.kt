@@ -1,9 +1,11 @@
 package br.com.felipeuematsu.service
 
 import br.com.felipeuematsu.entity.*
+import io.ktor.http.HttpStatusCode
 import io.ktor.websocket.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -48,6 +50,26 @@ object QueueService {
             QueueSong.findById(id)?.delete()
         }
     }
+
+    fun reorderSongToIndex(id: Int, newIndex: Int): Pair<String?, HttpStatusCode> =
+        transaction {
+            val song = QueueSong.findById(id) ?: return@transaction Pair("Song not found", HttpStatusCode.BadRequest)
+            val currentPosition = song.position
+            if (currentPosition == newIndex) return@transaction Pair("Song is already in position $newIndex",  HttpStatusCode.NotFound)
+            if (currentPosition < newIndex) {
+                QueueSongs.update(
+                    where = { QueueSongs.position greater currentPosition and (QueueSongs.position lessEq newIndex) },
+                    body = { it[position] = position minus 1 }
+                )
+            } else {
+                QueueSongs.update(
+                    where = { QueueSongs.position less currentPosition and (QueueSongs.position greaterEq newIndex) },
+                    body = { it[position] = position plus 1 }
+                )
+            }
+            song.position = newIndex
+            Pair(null, HttpStatusCode.OK)
+        }
 
     fun skip(session: DefaultWebSocketSession) {
         try {

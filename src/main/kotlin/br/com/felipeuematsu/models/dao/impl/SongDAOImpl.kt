@@ -1,14 +1,20 @@
 package br.com.felipeuematsu.models.dao.impl
 
 import br.com.felipeuematsu.database.KaraokeDatabase.dbQuery
+import br.com.felipeuematsu.entity.DBSongs
 import br.com.felipeuematsu.entity.Song
 import br.com.felipeuematsu.entity.SongDTO
-import br.com.felipeuematsu.entity.DBSongs
 import br.com.felipeuematsu.entity.SongResponseDTO
 import br.com.felipeuematsu.models.dao.SongDAO
 import br.com.felipeuematsu.service.SpotifyService
-import br.com.felipeuematsu.service.forEachParallel
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.deleteAll
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.update
 import java.time.Instant
 
 class SongDAOImpl : SongDAO {
@@ -88,6 +94,7 @@ class SongDAOImpl : SongDAO {
                 }
             val total = select?.count() ?: 0
             val songs = select
+                ?.orderBy(DBSongs.plays to SortOrder.DESC)
                 ?.limit(perPage, ((page - 1) * perPage).toLong())
                 ?.map(::resultRowToSong)?.toList()
                 ?: emptyList()

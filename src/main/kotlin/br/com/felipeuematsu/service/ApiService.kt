@@ -3,6 +3,7 @@ package br.com.felipeuematsu.service
 import br.com.felipeuematsu.entity.DBSongs
 import br.com.felipeuematsu.entity.Repositories
 import br.com.felipeuematsu.entity.Repository
+import br.com.felipeuematsu.entity.RepositoryDTO
 import br.com.felipeuematsu.entity.Song
 import br.com.felipeuematsu.entity.SongDTO
 import br.com.felipeuematsu.entity.SongResponseDTO
@@ -117,7 +118,7 @@ object ApiService {
                 }
                 null
             } else {
-                "Repository already exists"
+                return@transaction "Repository already exists"
             }
         }
     } catch (e: Exception) {
@@ -128,8 +129,8 @@ object ApiService {
         Repository.find { Repositories.path.lowerCase() like "%download%" }.firstOrNull()
     }
 
-    fun getFolderRepositories(): List<Repository> = runBlocking {
-        Repository.find { Repositories.path.isNotNull() }.toList()
+    fun getFolderRepositories(): List<RepositoryDTO> = transaction {
+        Repository.find { Repositories.path.isNotNull() }.map(Repository::toDTO).toList()
     }
 
     fun getSong(id: Int): SongDTO? =

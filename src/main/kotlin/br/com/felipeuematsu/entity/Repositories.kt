@@ -6,7 +6,22 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 
+@Serializable
+data class RepositoryDTO(
+    val path: String,
+    val regex: String,
+    val titlePos: Int,
+    val artistPos: Int,
+)
+
 class Repository(id: EntityID<Int>) : IntEntity(id) {
+    fun toDTO() = RepositoryDTO(
+        path = path,
+        regex = regex,
+        titlePos = titlePos,
+        artistPos = artistPos,
+    )
+
     companion object : IntEntityClass<Repository>(Repositories)
 
     var path by Repositories.path

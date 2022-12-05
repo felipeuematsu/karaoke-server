@@ -2,6 +2,7 @@ package br.com.felipeuematsu.plugins
 
 import br.com.felipeuematsu.entity.SingerDTO
 import br.com.felipeuematsu.models.YoutubeSongDTO
+import br.com.felipeuematsu.models.request.QueueReorderRequestDTO
 import br.com.felipeuematsu.models.request.add_path.AddPathRequestDTO
 import br.com.felipeuematsu.models.request.add_songs.AddSongsRequestDTO
 import br.com.felipeuematsu.models.request.submit_request.SubmitRequestDTO
@@ -97,13 +98,31 @@ fun Application.configureRouting() {
         post("/path") {
             val request: AddPathRequestDTO = call.receive()
             if (request.path == null || request.regex == null) {
-                return@post call.respond(HttpStatusCode.BadRequest, "Path or regex must be informed")
+                return@post call.respond(HttpStatusCode.BadRequest, "Path and regex must be informed")
             }
             ApiService.addFolderRepository(request.path, request.regex, request.titlePos, request.artistPos)?.let {
                 call.respond(status = HttpStatusCode.BadRequest, message = it)
             } ?: call.respond(HttpStatusCode.OK)
 
         }
+
+        put("/path") {
+            val repos: List<AddPathRequestDTO> = call.receive()
+            if (repos.any { repo -> repo.path == null || repo.regex == null }) {
+                return@put call.respond(HttpStatusCode.BadRequest, "Path and regex must be informed")
+            }
+            repos.forEach { repo ->
+                val error =
+                    ApiService.addFolderRepository(repo.path!!, repo.regex!!, repo.titlePos, repo.artistPos)
+                if (error != null) {
+                    return@put call.respond(status = HttpStatusCode.BadRequest, message = error)
+                }
+            }
+
+            call.respond(HttpStatusCode.OK)
+
+        }
+
         post("/path/download") {
             val path: String = call.receive()
 
@@ -152,6 +171,20 @@ fun Application.configureRouting() {
                 "Invalid id"
             )
             call.respond(QueueService.removeFromQueue(queueSongId))
+        }
+
+        put("/queue/reorder") {
+            val request: QueueReorderRequestDTO = call.receive()
+            if (request.queueSongId == null || request.newIndex == null) {
+                return@put call.respond(HttpStatusCode.BadRequest, "Request must have a queueSongId and newIndex")
+            }
+            val response = QueueService.reorderSongToIndex(request.queueSongId, request.newIndex)
+            val string = response.first
+            return@put if (string != null) {
+                call.respond(status = response.second, message = string)
+            } else {
+                call.respond(response.second)
+            }
         }
 
         post("/queue/skip") {
