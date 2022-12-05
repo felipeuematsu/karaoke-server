@@ -55,7 +55,7 @@ data class SongDTO(
 )
 
 class Song(songId: EntityID<Int>) : IntEntity(songId) {
-    fun toDTO() = SongDTO(id.value, title, artist, discId, path, filename, searchString, duration, plays, lastPlayed)
+    fun toDTO() = SongDTO(id.value, title, artist, discId, path, filename, searchString, duration, plays, lastPlayed, null)
 
     companion object : IntEntityClass<Song>(DBSongs)
 

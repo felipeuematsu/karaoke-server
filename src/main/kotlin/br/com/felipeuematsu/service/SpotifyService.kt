@@ -82,7 +82,7 @@ object SpotifyService {
         }
         val filteredSong = song.split('[').first().trim()
         val response = search("track:$filteredSong artist:$artist", "track", 1)
-        val url = response.tracks?.items?.firstOrNull()?.album?.images?.firstOrNull()?.url
+        val url = response.tracks?.items?.firstOrNull()?.album?.images?.firstOrNull()?.url ?: searchArtistImages(artist)
         url?.let {
             TrackImage.new {
                 this.title = song
