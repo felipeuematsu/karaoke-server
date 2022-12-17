@@ -206,7 +206,7 @@ object ApiService {
     }
 
     @OptIn(InternalAPI::class)
-    suspend fun addYoutubeSong(dto: YoutubeSongDTO): String? {
+    suspend fun addYoutubeSong(dto: YoutubeSongDTO): Any? {
         val repo = getDownloadRepository() ?: return "No download repository set"
 
         val url = dto.url ?: return "No url set"
@@ -228,7 +228,7 @@ object ApiService {
         }
         res.call.response.content.copyAndClose(file.writeChannel())
 
-        transaction {
+        return transaction {
             Song.new {
                 title = dto.title
                 artist = dto.artist
@@ -238,8 +238,7 @@ object ApiService {
                 path = file.absolutePath
                 searchString = "${dto.artist} - ${dto.title}.mp4 ${file.absolutePath}"
             }
-        }
-        return null
+        }.toDTO()
     }
 }
 

@@ -76,7 +76,7 @@ object SpotifyService {
         }
     }
 
-    fun searchSongImage(song: String, artist: String): String? {
+    fun  searchSongImage(song: String, artist: String): String? {
         TrackImage.find { (TrackImages.title like song) and (TrackImages.artist like artist) }.firstOrNull()?.let {
             return it.url
         }

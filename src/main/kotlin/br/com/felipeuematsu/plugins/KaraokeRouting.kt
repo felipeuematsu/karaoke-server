@@ -1,6 +1,7 @@
 package br.com.felipeuematsu.plugins
 
 import br.com.felipeuematsu.entity.SingerDTO
+import br.com.felipeuematsu.entity.SongDTO
 import br.com.felipeuematsu.models.YoutubeSongDTO
 import br.com.felipeuematsu.models.request.QueueReorderRequestDTO
 import br.com.felipeuematsu.models.request.add_path.AddPathRequestDTO
@@ -81,8 +82,18 @@ fun Application.configureRouting() {
             }
             val response = ApiService.search(title, artist, page, pageCount)
             call.respond(message = response)
-
         }
+        get("/search/artist") {
+            val artist = call.request.queryParameters["artist"]
+            val page = call.request.queryParameters["page"]?.toInt() ?: 1
+            val pageCount = call.request.queryParameters["pageCount"]?.toInt() ?: 10
+            if (artist == null) {
+                return@get call.respond(HttpStatusCode.BadRequest)
+            }
+            val response = ApiService.search(null, artist, page, pageCount)
+            call.respond(message = response)
+        }
+
         post("/connectionTest") {
             call.respond(message = ApiService.connectionTest())
         }
@@ -315,8 +326,12 @@ fun Application.configureRouting() {
 
         post("/song/youtube") {
             val youtubeSongDTO = call.receive<YoutubeSongDTO>()
-            val songDTO = ApiService.addYoutubeSong(youtubeSongDTO) ?: return@post call.respond(HttpStatusCode.OK)
-            call.respond(HttpStatusCode.BadRequest, songDTO)
+            val songDTO = ApiService.addYoutubeSong(youtubeSongDTO)
+            if (songDTO is SongDTO) {
+                return@post call.respond(HttpStatusCode.OK, songDTO)
+            } else {
+                return@post call.respond(HttpStatusCode.BadRequest, songDTO.toString())
+            }
         }
 
         post("/skip") {

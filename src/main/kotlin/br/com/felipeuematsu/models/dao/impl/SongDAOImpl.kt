@@ -98,13 +98,8 @@ class SongDAOImpl : SongDAO {
                 ?.limit(perPage, ((page - 1) * perPage).toLong())
                 ?.map(::resultRowToSong)?.toList()
                 ?: emptyList()
-            songs.map {
-                it.apply {
-                    imageUrl =
-                        SpotifyService.searchSongImage(song = it.title, artist = it.artist)
-                            ?: SpotifyService.searchArtistImages(it.artist)
-                }
-            }.toList()
+            songs.map { it.apply { imageUrl = SpotifyService.searchSongImage(song = it.title, artist = it.artist) } }
+                .toList()
 
             SongResponseDTO(
                 page = page,
