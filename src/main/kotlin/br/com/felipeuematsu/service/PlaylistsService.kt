@@ -8,6 +8,7 @@ import br.com.felipeuematsu.entity.Song
 import org.jetbrains.exposed.sql.SizedCollection
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -54,7 +55,7 @@ object PlaylistsService {
     private fun updateTop5Artists(): MutableList<PlaylistDTO> = transaction {
 
         val top5Artists = DBSongs
-            .select { DBSongs.plays greater 0 }
+            .selectAll()
             .groupBy(DBSongs.artist)
             .orderBy(DBSongs.plays to SortOrder.DESC)
             .limit(5)
@@ -94,9 +95,8 @@ object PlaylistsService {
             top50?.copy(songs = top50.songs.sortedByDescending { it.lastPlayed; it.plays }.toList()),
             last50?.copy(songs = last50.songs.sortedByDescending { it.lastPlayed }.toList()),
             *Playlist.find { Playlists.name notInList listOf("Top 50", "Last 50") }
-                .limit(5)
                 .sortedByDescending { it.songs.count(); it.lastUpdated }
-                .map { it.toDTO() }.toList().toTypedArray()
+                .map(Playlist::toDTO).take(5).toList().toTypedArray()
         )
     }
 
