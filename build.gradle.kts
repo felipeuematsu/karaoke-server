@@ -14,6 +14,7 @@ val ktor_client_core: String by project
 val ktor_server_websockets: String by project
 val tika_version: String by project
 val spa_version: String by project
+val yt_server_version: String by project
 
 plugins {
     application
@@ -33,6 +34,9 @@ distributions {
             from("flutter_resources") {
                 into("bin/flutter_resources")
             }
+            from("yt_resources") {
+                into("bin/yt_resources")
+            }
             from("resources") {
                 into("bin/resources")
             }
@@ -43,9 +47,11 @@ distributions {
 tasks {
     build {
         dependsOn("setupSpa")
+        dependsOn("setupYTServer")
     }
     installDist {
         dependsOn("setupSpa")
+        dependsOn("setupYTServer")
     }
 }
 
@@ -88,7 +94,7 @@ abstract class SetupSpaTask : DefaultTask() {
         val password = System.getenv("API_PASSWORD")
 
         val token = Base64.getEncoder().encodeToString("$username:$password".toByteArray())
-        val releasesUrl = "https://api.github.com/repos/felipeuematsu/karaoke-request-client/releases"
+        val releasesUrl = "https://api.github.com/repos/felipeuematsu/flup_karaoke/releases"
 
         val spaDir = File("flutter_resources")
 
@@ -153,3 +159,72 @@ abstract class SetupSpaTask : DefaultTask() {
     }
 }
 tasks.register<SetupSpaTask>("setupSpa") { spaVersion.set(spa_version) }
+
+abstract class SetupYTServerTask : DefaultTask() {
+    @get:Input
+    abstract val ytServerVersion: Property<String>
+
+    @TaskAction
+    fun setupSpa() {
+        val username = "felipeuematsu"
+        val password = System.getenv("API_PASSWORD")
+
+        val token = Base64.getEncoder().encodeToString("$username:$password".toByteArray())
+        val releasesUrl = "https://api.github.com/repos/felipeuematsu/flup_youtube_backend/releases"
+
+        val ytDir = File("yt_resources")
+
+        val dataResponse = URL(releasesUrl).openConnection().apply {
+            setRequestProperty(
+                "Authorization",
+                "Basic $token"
+            )
+        }.getInputStream().readBytes().toString(Charsets.UTF_8)
+        val json = JsonSlurper().parseText(dataResponse) as List<Map<String, Any>>
+
+        val release = json.firstOrNull { it["tag_name"] == ytServerVersion.get() }
+            ?: return println("No release found for version ${ytServerVersion.get()}")
+
+        val assets = release["assets"] as List<Map<String, String>>
+        val asset = assets.firstOrNull { it["name"]?.contains(".exe") == true }
+            ?: throw Exception("No release file found for version ${ytServerVersion.get()}")
+        val assetUrl = asset["browser_download_url"] ?: throw Exception("Asset not found")
+
+        if (!ytDir.exists()) {
+            println("Creating yt_executable directory")
+            ytDir.mkdirs()
+            println("yt_executable directory created successfully")
+        }
+
+        val tempDir = System.getProperty("user.dir")
+        val exeFile = File("${tempDir}/temp/flup_youtube_backend.exe")
+        val lockFile = File("${tempDir}/temp/flup_youtube_backend.lock")
+        if (!exeFile.exists() || !lockFile.exists() || (lockFile.readText() != ytServerVersion.get())) {
+            println("Creating Dirs")
+            exeFile.parentFile.mkdirs()
+            println("Downloading YT")
+            exeFile.createNewFile()
+            if (!lockFile.exists()) {
+                lockFile.createNewFile()
+            }
+            println("Downloading YT version ${ytServerVersion.get()}")
+            println(assetUrl)
+            val assetDownloadUrl = URL(assetUrl)
+            val inputStream = assetDownloadUrl.openConnection().getInputStream()
+
+            println("Writing to file")
+            exeFile.writeBytes(inputStream.readBytes())
+
+            lockFile.writeText(ytServerVersion.get())
+            println("Downloaded YT version ${ytServerVersion.get()}")
+        }
+
+        println("Copying YT version ${ytServerVersion.get()}")
+
+        val ytFile = File(ytDir, "flup_youtube_backend.exe")
+        ytFile.writeBytes(exeFile.readBytes())
+        println("Copied YT version ${ytServerVersion.get()}")
+
+    }
+}
+tasks.register<SetupYTServerTask>("setupYTServer") { ytServerVersion.set(yt_server_version) }

@@ -133,6 +133,10 @@ object ApiService {
         Repository.find { Repositories.path.isNotNull() }.map(Repository::toDTO).toList()
     }
 
+    fun removeRepositories() = transaction {
+        Repositories.deleteAll()
+    }
+
     fun getSong(id: Int): SongDTO? =
         runBlocking { songDAO.getSong(id) }
 

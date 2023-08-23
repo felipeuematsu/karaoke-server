@@ -40,4 +40,5 @@ karaoke.sqlite
 
 ### Flutter compile time ###
 flutter_resources/
+yt_resources/
 temp/

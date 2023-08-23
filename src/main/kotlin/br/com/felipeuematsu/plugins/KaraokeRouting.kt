@@ -106,31 +106,34 @@ fun Application.configureRouting() {
             call.respond(message = message)
         }
 
-        post("/path") {
-            val request: AddPathRequestDTO = call.receive()
-            if (request.path == null || request.regex == null) {
-                return@post call.respond(HttpStatusCode.BadRequest, "Path and regex must be informed")
-            }
-            ApiService.addFolderRepository(request.path, request.regex, request.titlePos, request.artistPos)?.let {
-                call.respond(status = HttpStatusCode.BadRequest, message = it)
-            } ?: call.respond(HttpStatusCode.OK)
-
-        }
-
         put("/path") {
             val repos: List<AddPathRequestDTO> = call.receive()
             if (repos.any { repo -> repo.path == null || repo.regex == null }) {
                 return@put call.respond(HttpStatusCode.BadRequest, "Path and regex must be informed")
             }
+            ApiService.removeRepositories()
+            repos.forEach { repo ->
+                ApiService.addFolderRepository(repo.path!!, repo.regex!!, repo.titlePos, repo.artistPos)?.let {
+                    call.respond(status = HttpStatusCode.InternalServerError, message = it)
+                }
+            }
+            call.respond(ApiService.getFolderRepositories())
+        }
+
+        post("/path") {
+            val repos: List<AddPathRequestDTO> = call.receive()
+            if (repos.any { repo -> repo.path == null || repo.regex == null }) {
+                return@post call.respond(HttpStatusCode.BadRequest, "Path and regex must be informed")
+            }
             repos.forEach { repo ->
                 val error =
                     ApiService.addFolderRepository(repo.path!!, repo.regex!!, repo.titlePos, repo.artistPos)
                 if (error != null) {
-                    return@put call.respond(status = HttpStatusCode.BadRequest, message = error)
+                    return@post call.respond(status = HttpStatusCode.InternalServerError, message = error)
                 }
             }
 
-            call.respond(HttpStatusCode.OK)
+            call.respond(ApiService.getFolderRepositories())
 
         }
 
