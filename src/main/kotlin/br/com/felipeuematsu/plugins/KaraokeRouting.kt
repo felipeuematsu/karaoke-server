@@ -13,15 +13,14 @@ import br.com.felipeuematsu.service.PlaylistsService
 import br.com.felipeuematsu.service.QueueService
 import br.com.felipeuematsu.service.SingerService
 import br.com.felipeuematsu.service.SpotifyService
-import io.ktor.http.HttpStatusCode
+import io.ktor.http.*
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.http.content.react
 import io.ktor.server.http.content.singlePageApplication
 import io.ktor.server.request.receive
-import io.ktor.server.response.respond
-import io.ktor.server.response.respondText
+import io.ktor.server.response.*
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -48,7 +47,7 @@ fun Application.configureRouting() {
         get("/.well-known/assetlinks.json") {
             call.respondText(
                 File("resources/assetlinks.json").readText(Charset.defaultCharset()),
-                contentType = io.ktor.http.ContentType.Application.Json
+                contentType = ContentType.Application.Json
             )
         }
 
@@ -344,6 +343,27 @@ fun Application.configureRouting() {
             )
             session.send(Frame.Text("skip"))
             call.respond(HttpStatusCode.NoContent)
+        }
+        post("/manifest") {
+            val queryParams = call.request.queryParameters
+            call.respondRedirect(false, block = {
+                protocol = URLProtocol.HTTP
+                host = "localhost"
+                port = 8080
+                pathSegments = listOf("manifest")
+                parameters.appendAll(queryParams)
+            })
+        }
+
+        post("/search") {
+            val queryParams = call.request.queryParameters
+            call.respondRedirect(false, block = {
+                protocol = URLProtocol.HTTP
+                host = "localhost"
+                port = 8080
+                pathSegments = listOf("search")
+                parameters.appendAll(queryParams)
+            })
         }
     }
 }
