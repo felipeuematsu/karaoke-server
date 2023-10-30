@@ -23,9 +23,9 @@ plugins {
 }
 
 group = "dev.felipeuematsu"
-version = "1.5.1"
+version = "1.5.2"
 application {
-    mainClass.set("br.com.felipeuematsu.ApplicationKt")
+    mainClass.set("dev.felipeuematsu.ApplicationKt")
 }
 
 distributions {
