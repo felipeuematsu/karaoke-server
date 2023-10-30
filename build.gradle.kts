@@ -1,3 +1,5 @@
+@file:Suppress("PropertyName")
+
 import groovy.json.JsonSlurper
 import java.net.URL
 import java.util.Base64
