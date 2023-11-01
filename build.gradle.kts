@@ -18,6 +18,8 @@ val tika_version: String by project
 val spa_version: String by project
 val yt_server_version: String by project
 
+val version: String by project
+
 plugins {
     application
     kotlin("jvm") version "1.7.0"
@@ -25,7 +27,6 @@ plugins {
 }
 
 group = "dev.felipeuematsu"
-version = "1.5.2"
 application {
     mainClass.set("dev.felipeuematsu.ApplicationKt")
 }

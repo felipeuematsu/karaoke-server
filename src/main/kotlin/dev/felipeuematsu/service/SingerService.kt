@@ -21,4 +21,9 @@ object SingerService {
                 name = singerDTO.name
             }?.toDTO()
         }
+
+    fun deleteSinger(id: Int): Boolean = transaction {
+        Singer.findById(id)?.delete() ?: return@transaction false
+        return@transaction true
+    }
 }

@@ -9,4 +9,5 @@ data class CurrentSongDTO(
     val songId: Int? = null,
     val singer: String? = null,
     val position: Int,
+    val playing: Boolean,
 )

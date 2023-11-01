@@ -8,18 +8,15 @@ import dev.felipeuematsu.models.request.add_path.AddPathRequestDTO
 import dev.felipeuematsu.models.request.add_songs.AddSongsRequestDTO
 import dev.felipeuematsu.models.request.submit_request.SubmitRequestDTO
 import dev.felipeuematsu.models.response.CurrentSongDTO
-import dev.felipeuematsu.service.ApiService
-import dev.felipeuematsu.service.PlaylistsService
-import dev.felipeuematsu.service.QueueService
-import dev.felipeuematsu.service.SingerService
-import dev.felipeuematsu.service.SpotifyService
+import dev.felipeuematsu.service.*
 import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.http.content.react
 import io.ktor.server.http.content.singlePageApplication
-import io.ktor.server.request.receive
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
@@ -51,6 +48,12 @@ fun Application.configureRouting() {
                 File("resources/assetlinks.json").readText(Charset.defaultCharset()),
                 contentType = ContentType.Application.Json
             )
+        }
+
+        get("/images/{userId}") {
+            val userId = call.parameters["userId"]?.toIntOrNull() ?: return@get call.respond(HttpStatusCode.BadRequest)
+            val image = ImageService.getUserImage(userId) ?: return@get call.respond(HttpStatusCode.NotFound)
+            call.respondFile(image)
         }
 
         singlePageApplication {
@@ -269,7 +272,11 @@ fun Application.configureRouting() {
                 "No WebSocket session found. Try opening the player again."
             )
             val songDTO = ApiService.getSong(id) ?: return@post call.respond(HttpStatusCode.NotFound)
-            session.sendSerializedBase<SongDTO>(songDTO, KotlinxWebsocketSerializationConverter(Json), Charset.defaultCharset())
+            session.sendSerializedBase<SongDTO>(
+                songDTO,
+                KotlinxWebsocketSerializationConverter(Json),
+                Charset.defaultCharset()
+            )
             call.respond(HttpStatusCode.NoContent)
         }
 
@@ -291,6 +298,16 @@ fun Application.configureRouting() {
             call.respond(HttpStatusCode.NoContent)
         }
 
+        post("/volume") {
+            val session = webSocketSession ?: return@post call.respond(
+                HttpStatusCode.FailedDependency,
+                "No WebSocket session found. Try opening the player again."
+            )
+            val body = call.receive<Map<String, Any>>()
+            session.send(Frame.Text("{\"volume\": ${body["volume"]}}"))
+            call.respond(HttpStatusCode.NoContent)
+        }
+
         post("/queue") {
             val submitRequestDTO = call.receive<SubmitRequestDTO>()
 
@@ -307,7 +324,21 @@ fun Application.configureRouting() {
 
         post("/singer") {
             val singerDTO = call.receive<SingerDTO>()
+            val image = call.receiveMultipart().readAllParts().find { it.name == "image" }
+            if (image != null && image is PartData.FileItem) ImageService.setUserImage(singerDTO.id, image)
+
             call.respond(SingerService.addSinger(singerDTO.name))
+        }
+
+        delete("/singer") {
+            val singerDTO = call.receive<SingerDTO>()
+            val deleted = SingerService.deleteSinger(singerDTO.id)
+
+            if (deleted) {
+                call.respond(HttpStatusCode.OK)
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
         }
 
         get("/playing") {
@@ -324,6 +355,10 @@ fun Application.configureRouting() {
 
         put("/singer") {
             val singerDTO = call.receive<SingerDTO>()
+            val image = call.receiveMultipart().readAllParts().find { it.name == "image" }
+            if (image != null && image is PartData.FileItem) ImageService.setUserImage(singerDTO.id, image)
+
+
             val result = SingerService.updateSinger(singerDTO) ?: return@put call.respond(HttpStatusCode.NotFound)
             call.respond(result)
         }
@@ -338,6 +373,14 @@ fun Application.configureRouting() {
             }
         }
 
+        post("/restart") {
+            val session = webSocketSession ?: return@post call.respond(
+                HttpStatusCode.FailedDependency,
+                "No WebSocket session found. Try opening the player again."
+            )
+            session.send(Frame.Text("restart"))
+            call.respond(HttpStatusCode.NoContent)
+        }
         post("/skip") {
             val session = webSocketSession ?: return@post call.respond(
                 HttpStatusCode.FailedDependency,
