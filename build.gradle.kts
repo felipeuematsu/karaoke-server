@@ -168,7 +168,7 @@ abstract class SetupYTServerTask : DefaultTask() {
     abstract val ytServerVersion: Property<String>
 
     @TaskAction
-    fun setupSpa() {
+    fun setupYTServer() {
         val username = "felipeuematsu"
         val password = System.getenv("API_PASSWORD")
 

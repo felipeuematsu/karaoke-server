@@ -23,7 +23,7 @@ class TrackImage(id: EntityID<Int>) : IntEntity(id) {
 }
 
 object TrackImages : IntIdTable() {
-    val title = varchar("title", 127)
-    val artist = varchar("artist", 127)
+    val title = varchar("title", 500)
+    val artist = varchar("artist", 500)
     val url = varchar("url", 500)
 }

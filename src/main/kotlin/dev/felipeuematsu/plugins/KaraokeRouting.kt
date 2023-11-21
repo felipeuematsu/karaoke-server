@@ -26,6 +26,7 @@ import io.ktor.server.routing.routing
 import io.ktor.server.websocket.receiveDeserialized
 import io.ktor.server.websocket.webSocket
 import io.ktor.util.*
+import io.ktor.util.reflect.*
 import io.ktor.websocket.DefaultWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.serialization.sendSerializedBase
@@ -102,7 +103,7 @@ fun Application.configureRouting() {
             call.respond(message = ApiService.connectionTest())
         }
         post("/addSongs") {
-            val request: AddSongsRequestDTO = call.receive()
+            val request = call.receive<AddSongsRequestDTO>(typeInfo<AddSongsRequestDTO>())
             if (request.songs == null) {
                 return@post call.respond(HttpStatusCode.BadRequest)
             }
@@ -111,7 +112,7 @@ fun Application.configureRouting() {
         }
 
         put("/path") {
-            val repos: List<AddPathRequestDTO> = call.receive()
+            val repos: List<AddPathRequestDTO> = call.receive(typeInfo<List<AddPathRequestDTO>>())
             if (repos.any { repo -> repo.path == null || repo.regex == null }) {
                 return@put call.respond(HttpStatusCode.BadRequest, "Path and regex must be informed")
             }
@@ -125,13 +126,13 @@ fun Application.configureRouting() {
         }
 
         post("/path") {
-            val repos: List<AddPathRequestDTO> = call.receive()
+            val repos = call.receive<List<AddPathRequestDTO>>(typeInfo<List<AddPathRequestDTO>>())
             if (repos.any { repo -> repo.path == null || repo.regex == null }) {
                 return@post call.respond(HttpStatusCode.BadRequest, "Path and regex must be informed")
             }
+
             repos.forEach { repo ->
-                val error =
-                    ApiService.addFolderRepository(repo.path!!, repo.regex!!, repo.titlePos, repo.artistPos)
+                val error = ApiService.addFolderRepository(repo.path!!, repo.regex!!, repo.titlePos, repo.artistPos)
                 if (error != null) {
                     return@post call.respond(status = HttpStatusCode.InternalServerError, message = error)
                 }
@@ -142,7 +143,7 @@ fun Application.configureRouting() {
         }
 
         post("/path/download") {
-            val path: String = call.receive()
+            val path: String = call.receive(typeInfo<String>())
 
             ApiService.addFolderRepository("$path/download", "(.*) - (.*)", 1, 0)?.let {
                 call.respond(status = HttpStatusCode.BadRequest, message = it)
@@ -185,14 +186,13 @@ fun Application.configureRouting() {
 
         delete("/queue/{queueSongId}") {
             val queueSongId = call.parameters["queueSongId"]?.toIntOrNull() ?: return@delete call.respond(
-                HttpStatusCode.BadRequest,
-                "Invalid id"
+                HttpStatusCode.BadRequest, "Invalid id"
             )
             call.respond(QueueService.removeFromQueue(queueSongId))
         }
 
         put("/queue/reorder") {
-            val request: QueueReorderRequestDTO = call.receive()
+            val request: QueueReorderRequestDTO = call.receive(typeInfo<QueueReorderRequestDTO>())
             if (request.queueSongId == null || request.newIndex == null) {
                 return@put call.respond(HttpStatusCode.BadRequest, "Request must have a queueSongId and newIndex")
             }
@@ -207,8 +207,7 @@ fun Application.configureRouting() {
 
         post("/queue/skip") {
             val session = webSocketSession ?: return@post call.respond(
-                HttpStatusCode.FailedDependency,
-                "No WebSocket session found. Try opening the player again."
+                HttpStatusCode.FailedDependency, "No WebSocket session found. Try opening the player again."
             )
             session.send(Frame.Text("skip"))
 
@@ -223,8 +222,7 @@ fun Application.configureRouting() {
 
         post("play") {
             val session = webSocketSession ?: return@post call.respond(
-                HttpStatusCode.FailedDependency,
-                "No WebSocket session found. Try opening the player again."
+                HttpStatusCode.FailedDependency, "No WebSocket session found. Try opening the player again."
             )
             session.send(Frame.Text("play"))
             call.respond(HttpStatusCode.NoContent)
@@ -232,8 +230,7 @@ fun Application.configureRouting() {
 
         post("pause") {
             val session = webSocketSession ?: return@post call.respond(
-                HttpStatusCode.FailedDependency,
-                "No WebSocket session found. Try opening the player again."
+                HttpStatusCode.FailedDependency, "No WebSocket session found. Try opening the player again."
             )
             session.send(Frame.Text("pause"))
             call.respond(HttpStatusCode.NoContent)
@@ -241,8 +238,7 @@ fun Application.configureRouting() {
 
         post("stop") {
             val session = webSocketSession ?: return@post call.respond(
-                HttpStatusCode.FailedDependency,
-                "No WebSocket session found. Try opening the player again."
+                HttpStatusCode.FailedDependency, "No WebSocket session found. Try opening the player again."
             )
             session.send(Frame.Text("stop"))
             call.respond(HttpStatusCode.NoContent)
@@ -255,8 +251,7 @@ fun Application.configureRouting() {
 
         post("/restart") {
             val session = webSocketSession ?: return@post call.respond(
-                HttpStatusCode.FailedDependency,
-                "No WebSocket session found. Try opening the player again."
+                HttpStatusCode.FailedDependency, "No WebSocket session found. Try opening the player again."
             )
             session.send(Frame.Text("restart"))
             call.respond(HttpStatusCode.NoContent)
@@ -268,22 +263,18 @@ fun Application.configureRouting() {
             val id =
                 idString.toIntOrNull() ?: return@post call.respond(HttpStatusCode.BadRequest, "Id must be a number")
             val session = webSocketSession ?: return@post call.respond(
-                HttpStatusCode.FailedDependency,
-                "No WebSocket session found. Try opening the player again."
+                HttpStatusCode.FailedDependency, "No WebSocket session found. Try opening the player again."
             )
             val songDTO = ApiService.getSong(id) ?: return@post call.respond(HttpStatusCode.NotFound)
             session.sendSerializedBase<SongDTO>(
-                songDTO,
-                KotlinxWebsocketSerializationConverter(Json),
-                Charset.defaultCharset()
+                songDTO, KotlinxWebsocketSerializationConverter(Json), Charset.defaultCharset()
             )
             call.respond(HttpStatusCode.NoContent)
         }
 
         post("/volume/up") {
             val session = webSocketSession ?: return@post call.respond(
-                HttpStatusCode.FailedDependency,
-                "No WebSocket session found. Try opening the player again."
+                HttpStatusCode.FailedDependency, "No WebSocket session found. Try opening the player again."
             )
             session.send(Frame.Text("volumeUp"))
             call.respond(HttpStatusCode.NoContent)
@@ -291,8 +282,7 @@ fun Application.configureRouting() {
 
         post("/volume/down") {
             val session = webSocketSession ?: return@post call.respond(
-                HttpStatusCode.FailedDependency,
-                "No WebSocket session found. Try opening the player again."
+                HttpStatusCode.FailedDependency, "No WebSocket session found. Try opening the player again."
             )
             session.send(Frame.Text("volumeDown"))
             call.respond(HttpStatusCode.NoContent)
@@ -300,16 +290,15 @@ fun Application.configureRouting() {
 
         post("/volume") {
             val session = webSocketSession ?: return@post call.respond(
-                HttpStatusCode.FailedDependency,
-                "No WebSocket session found. Try opening the player again."
+                HttpStatusCode.FailedDependency, "No WebSocket session found. Try opening the player again."
             )
-            val body = call.receive<Map<String, Any>>()
+            val body = call.receive<Map<String, Any>>(typeInfo<Map<String, Any>>())
             session.send(Frame.Text("{\"volume\": ${body["volume"]}}"))
             call.respond(HttpStatusCode.NoContent)
         }
 
         post("/queue") {
-            val submitRequestDTO = call.receive<SubmitRequestDTO>()
+            val submitRequestDTO = call.receive<SubmitRequestDTO>(typeInfo<SubmitRequestDTO>())
 
             if (submitRequestDTO.songId == null) {
                 return@post call.respond(HttpStatusCode.BadRequest, "Song Id must not be null")
@@ -323,7 +312,7 @@ fun Application.configureRouting() {
         }
 
         post("/singer") {
-            val singerDTO = call.receive<SingerDTO>()
+            val singerDTO = call.receive<SingerDTO>(typeInfo<SingerDTO>())
             val image = call.receiveMultipart().readAllParts().find { it.name == "image" }
             if (image != null && image is PartData.FileItem) ImageService.setUserImage(singerDTO.id, image)
 
@@ -331,7 +320,7 @@ fun Application.configureRouting() {
         }
 
         delete("/singer") {
-            val singerDTO = call.receive<SingerDTO>()
+            val singerDTO = call.receive<SingerDTO>(typeInfo<SingerDTO>())
             val deleted = SingerService.deleteSinger(singerDTO.id)
 
             if (deleted) {
@@ -354,7 +343,7 @@ fun Application.configureRouting() {
         }
 
         put("/singer") {
-            val singerDTO = call.receive<SingerDTO>()
+            val singerDTO = call.receive<SingerDTO>(typeInfo<SingerDTO>())
             val image = call.receiveMultipart().readAllParts().find { it.name == "image" }
             if (image != null && image is PartData.FileItem) ImageService.setUserImage(singerDTO.id, image)
 
@@ -364,7 +353,7 @@ fun Application.configureRouting() {
         }
 
         post("/song/youtube") {
-            val youtubeSongDTO = call.receive<YoutubeSongDTO>()
+            val youtubeSongDTO = call.receive<YoutubeSongDTO>(typeInfo<YoutubeSongDTO>())
             val songDTO = ApiService.addYoutubeSong(youtubeSongDTO)
             if (songDTO is SongDTO) {
                 return@post call.respond(HttpStatusCode.OK, songDTO)
@@ -375,40 +364,33 @@ fun Application.configureRouting() {
 
         post("/restart") {
             val session = webSocketSession ?: return@post call.respond(
-                HttpStatusCode.FailedDependency,
-                "No WebSocket session found. Try opening the player again."
+                HttpStatusCode.FailedDependency, "No WebSocket session found. Try opening the player again."
             )
             session.send(Frame.Text("restart"))
             call.respond(HttpStatusCode.NoContent)
         }
         post("/skip") {
             val session = webSocketSession ?: return@post call.respond(
-                HttpStatusCode.FailedDependency,
-                "No WebSocket session found. Try opening the player again."
+                HttpStatusCode.FailedDependency, "No WebSocket session found. Try opening the player again."
             )
             session.send(Frame.Text("skip"))
             call.respond(HttpStatusCode.NoContent)
         }
-        post("/manifest") {
+        get("/youtube/manifest") {
             val queryParams = call.request.queryParameters
-            call.respondRedirect(false, block = {
-                protocol = URLProtocol.HTTP
-                host = "localhost"
-                port = 8080
-                pathSegments = listOf("manifest")
-                parameters.appendAll(queryParams)
-            })
+
+            val id = queryParams["id"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+            YoutubeRedirectService.getManifest(id).let {
+                call.respond(it)
+            }
         }
 
-        post("/search") {
+        get("/youtube/search") {
             val queryParams = call.request.queryParameters
-            call.respondRedirect(false, block = {
-                protocol = URLProtocol.HTTP
-                host = "localhost"
-                port = 8080
-                pathSegments = listOf("search")
-                parameters.appendAll(queryParams)
-            })
+
+            YoutubeRedirectService.getSearch(queryParams["query"], queryParams["uuid"]).let {
+                call.respond(it)
+            }
         }
     }
 }

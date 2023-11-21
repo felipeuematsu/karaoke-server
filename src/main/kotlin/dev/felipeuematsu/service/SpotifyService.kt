@@ -15,9 +15,12 @@ import io.ktor.client.request.*
 import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
+import io.ktor.util.reflect.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.exposedLogger
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDateTime
 
 object SpotifyService {
@@ -51,7 +54,7 @@ object SpotifyService {
                 )
             }
 
-            val dto: TokenResponseDTO = response.body()
+            val dto = response.body<TokenResponseDTO>(typeInfo<TokenResponseDTO>())
             accessToken = dto.access_token
             dto.expires_in?.let { accessTokenExpiration = LocalDateTime.now().plusSeconds(it) }
         }
@@ -72,25 +75,28 @@ object SpotifyService {
                 parameter("limit", limit)
 
             }
-            return@runBlocking response.body<SearchResponseDTO>()
+            return@runBlocking response.body<SearchResponseDTO>(typeInfo<SearchResponseDTO>())
         }
     }
 
-    fun  searchSongImage(song: String, artist: String): String? {
-        TrackImage.find { (TrackImages.title like song) and (TrackImages.artist like artist) }.firstOrNull()?.let {
-            return it.url
-        }
-        val filteredSong = song.split('[').first().trim()
-        val response = search("track:$filteredSong artist:$artist", "track", 1)
-        val url = response.tracks?.items?.firstOrNull()?.album?.images?.firstOrNull()?.url ?: searchArtistImages(artist)
-        url?.let {
-            TrackImage.new {
-                this.title = song
-                this.artist = artist
-                this.url = url
+    fun searchSongImage(song: String, artist: String): String? {
+        return runBlocking {
+            TrackImage.find { (TrackImages.title like song) and (TrackImages.artist like artist) }.firstOrNull()
+                ?.let { return@runBlocking it.url }
+            val filteredSong = song.split('[').first().trim()
+            val response = search("track:$filteredSong artist:$artist", "track", 1)
+            val url =
+                response.tracks?.items?.firstOrNull()?.album?.images?.firstOrNull()?.url ?: searchArtistImages(artist)
+            url?.let {
+                TrackImage.new {
+                    this.title = song
+                    this.artist = artist
+                    this.url = url
+                }
             }
+            url
         }
-        return url
+
     }
 
     fun searchArtistImages(searchParam: String): String? {

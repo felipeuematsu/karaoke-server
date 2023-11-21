@@ -5,6 +5,7 @@ import dev.felipeuematsu.entity.Playlist
 import dev.felipeuematsu.entity.PlaylistDTO
 import dev.felipeuematsu.entity.Playlists
 import dev.felipeuematsu.entity.Song
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.SizedCollection
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.select
