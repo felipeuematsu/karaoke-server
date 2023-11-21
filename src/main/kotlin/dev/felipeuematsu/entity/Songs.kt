@@ -1,9 +1,7 @@
 package dev.felipeuematsu.entity
 
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Serializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -25,8 +23,6 @@ data class SongResponseDTO(
     val data: List<SongDTO>,
 )
 
-@OptIn(ExperimentalSerializationApi::class)
-@Serializer(forClass = Instant::class)
 object InstantSerializer : KSerializer<Instant> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
     override fun deserialize(decoder: Decoder): Instant {

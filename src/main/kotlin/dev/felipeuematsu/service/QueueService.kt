@@ -1,45 +1,15 @@
 package dev.felipeuematsu.service
 
 import dev.felipeuematsu.entity.*
-import io.ktor.http.HttpStatusCode
-import io.ktor.websocket.*
-import org.jetbrains.exposed.sql.*
+import io.ktor.http.*
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.minus
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.time.LocalDateTime
-import java.time.ZoneOffset
+import org.jetbrains.exposed.sql.update
 
 object QueueService {
-    fun enterQueue(singer: Singer) {
-        transaction {
-            val newPosition =
-                CurrentSingers
-                    .selectAll()
-                    .orderBy(CurrentSingers.position to SortOrder.DESC)
-                    .limit(n = 1)
-                    .firstOrNull()
-                    ?.get(CurrentSingers.position) ?: 0
-            CurrentSinger.new {
-                singerId = singer.id
-                name = singer.name
-                position = newPosition
-                addts = LocalDateTime.now().toInstant(ZoneOffset.UTC)
-            }
-        }
-    }
-
-    fun leaveQueue(singer: Singer) {
-        transaction {
-            val currentSinger = CurrentSinger.find { CurrentSingers.singer eq singer.id }.firstOrNull()
-            val position = currentSinger?.position ?: 0
-            currentSinger?.delete()
-            CurrentSingers.update(
-                where = { CurrentSingers.position greater position },
-                body = { it[CurrentSingers.position] = CurrentSingers.position minus 1 }
-            )
-        }
-    }
 
     fun getQueue(): List<QueueSongDTO> = transaction {
         QueueSong.all().toList().map(QueueSong::toDTO)
@@ -55,7 +25,10 @@ object QueueService {
         transaction {
             val song = QueueSong.findById(id) ?: return@transaction Pair("Song not found", HttpStatusCode.BadRequest)
             val currentPosition = song.position
-            if (currentPosition == newIndex) return@transaction Pair("Song is already in position $newIndex",  HttpStatusCode.NotFound)
+            if (currentPosition == newIndex) return@transaction Pair(
+                "Song is already in position $newIndex",
+                HttpStatusCode.NotFound
+            )
             if (currentPosition < newIndex) {
                 QueueSongs.update(
                     where = { QueueSongs.position greater currentPosition and (QueueSongs.position lessEq newIndex) },
@@ -70,14 +43,6 @@ object QueueService {
             song.position = newIndex
             Pair(null, HttpStatusCode.OK)
         }
-
-    fun skip(session: DefaultWebSocketSession) {
-        try {
-            suspend { session.send(Frame.Text("skip")) }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
 
     fun getNextSong(): QueueSongDTO? = transaction {
         val first = QueueSong.find { QueueSongs.position eq 0 }.firstOrNull() ?: return@transaction null
