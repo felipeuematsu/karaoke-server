@@ -4,6 +4,7 @@ import dev.felipeuematsu.entity.SingerDTO
 import dev.felipeuematsu.entity.SongDTO
 import dev.felipeuematsu.models.YoutubeSongDTO
 import dev.felipeuematsu.models.request.QueueReorderRequestDTO
+import dev.felipeuematsu.models.request.VolumeRequestDTO
 import dev.felipeuematsu.models.request.add_path.AddPathRequestDTO
 import dev.felipeuematsu.models.request.add_songs.AddSongsRequestDTO
 import dev.felipeuematsu.models.request.submit_request.SubmitRequestDTO
@@ -292,8 +293,8 @@ fun Application.configureRouting() {
             val session = webSocketSession ?: return@post call.respond(
                 HttpStatusCode.FailedDependency, "No WebSocket session found. Try opening the player again."
             )
-            val body = call.receive<Map<String, Any>>(typeInfo<Map<String, Any>>())
-            session.send(Frame.Text("{\"volume\": ${body["volume"]}}"))
+            val body = call.receive<VolumeRequestDTO>(typeInfo<Map<String, Any>>())
+            session.send(Frame.Text("{\"volume\": ${body.volume}}"))
             call.respond(HttpStatusCode.NoContent)
         }
 
@@ -312,8 +313,11 @@ fun Application.configureRouting() {
         }
 
         post("/singer") {
-            val singerDTO = call.receive<SingerDTO>(typeInfo<SingerDTO>())
-            val image = call.receiveMultipart().readAllParts().find { it.name == "image" }
+            val parts = call.receiveMultipart().readAllParts()
+            val dto = parts.find { it.name == "dto" }
+            val image = parts.find { it.name == "image" }
+            if (dto == null || dto !is PartData.FormItem) return@post call.respond(HttpStatusCode.BadRequest)
+            val singerDTO = Json.decodeFromString(SingerDTO.serializer(), dto.value)
             if (image != null && image is PartData.FileItem) ImageService.setUserImage(singerDTO.id, image)
 
             call.respond(SingerService.addSinger(singerDTO.name))
@@ -343,10 +347,12 @@ fun Application.configureRouting() {
         }
 
         put("/singer") {
-            val singerDTO = call.receive<SingerDTO>(typeInfo<SingerDTO>())
-            val image = call.receiveMultipart().readAllParts().find { it.name == "image" }
+            val parts = call.receiveMultipart().readAllParts()
+            val dto = parts.find { it.name == "dto" }
+            val image = parts.find { it.name == "image" }
+            if (dto == null || dto !is PartData.FormItem) return@put call.respond(HttpStatusCode.BadRequest)
+            val singerDTO = Json.decodeFromString(SingerDTO.serializer(), dto.value)
             if (image != null && image is PartData.FileItem) ImageService.setUserImage(singerDTO.id, image)
-
 
             val result = SingerService.updateSinger(singerDTO) ?: return@put call.respond(HttpStatusCode.NotFound)
             call.respond(result)
