@@ -110,7 +110,7 @@ abstract class SetupSpaTask : DefaultTask() {
         val json = JsonSlurper().parseText(dataResponse) as List<Map<String, Any>>
 
         val release = json.firstOrNull { it["tag_name"] == spaVersion.get() }
-            ?: return println("No release found for version ${spaVersion.get()}")
+            ?: throw Exception("No release found for version ${spaVersion.get()}")
 
         val assets = release["assets"] as List<Map<String, String>>
         val asset = assets.firstOrNull { it["name"]?.contains(".zip") == true }
@@ -186,7 +186,7 @@ abstract class SetupYTServerTask : DefaultTask() {
         val json = JsonSlurper().parseText(dataResponse) as List<Map<String, Any>>
 
         val release = json.firstOrNull { it["tag_name"] == ytServerVersion.get() }
-            ?: return println("No release found for version ${ytServerVersion.get()}")
+            ?: throw Exception("No release found for version ${ytServerVersion.get()}")
 
         val assets = release["assets"] as List<Map<String, String>>
         val asset = assets.firstOrNull { it["name"]?.contains(".exe") == true }
