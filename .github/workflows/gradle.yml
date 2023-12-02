@@ -44,6 +44,19 @@ jobs:
 
 # This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-gradle
+    - uses: mukunku/tag-exists-action@v1.2.0
+      id: checkTag
+      with:
+        tag: "${{ steps.version.outputs.data }}"
+
+    - name: Create Release
+      if: steps.checkTag.outputs.exists == 'false'
+      uses: avakar/tag-and-release@v1
+      with:
+        tag_name: "${{ steps.version.outputs.data }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
     - name: Create new release
       uses: actions/create-release@v1
