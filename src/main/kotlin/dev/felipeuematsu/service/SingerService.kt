@@ -19,6 +19,7 @@ object SingerService {
         transaction {
             Singer.findById(singerDTO.id)?.apply {
                 name = singerDTO.name
+                active = singerDTO.active
             }?.toDTO()
         }
 
