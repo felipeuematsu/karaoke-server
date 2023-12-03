@@ -7,7 +7,10 @@ import org.jetbrains.exposed.sql.transactions.transaction
 object SingerService {
     fun addSinger(name: String): SingerDTO =
         transaction {
-            Singer.new { this.name = name }.toDTO()
+            Singer.new {
+                this.name = name
+                this.active = true
+            }.toDTO()
         }
 
     fun getSingers(): List<SingerDTO> =
