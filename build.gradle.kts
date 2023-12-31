@@ -102,10 +102,10 @@ abstract class SetupSpaTask : DefaultTask() {
         val spaDir = File("flutter_resources")
 
         val dataResponse = URL(releasesUrl).openConnection().apply {
-            setRequestProperty(
-                "Authorization",
-                "Basic $token"
-            )
+//            setRequestProperty(
+//                "Authorization",
+//                "Basic $token"
+//            )
         }.getInputStream().readBytes().toString(Charsets.UTF_8)
         val json = JsonSlurper().parseText(dataResponse) as List<Map<String, Any>>
 
@@ -178,10 +178,10 @@ abstract class SetupYTServerTask : DefaultTask() {
         val ytDir = File("yt_resources")
 
         val dataResponse = URL(releasesUrl).openConnection().apply {
-            setRequestProperty(
-                "Authorization",
-                "Basic $token"
-            )
+//            setRequestProperty(
+//                "Authorization",
+//                "Basic $token"
+//            )
         }.getInputStream().readBytes().toString(Charsets.UTF_8)
         val json = JsonSlurper().parseText(dataResponse) as List<Map<String, Any>>
 

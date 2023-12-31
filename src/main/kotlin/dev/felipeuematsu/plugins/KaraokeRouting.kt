@@ -12,7 +12,8 @@ import dev.felipeuematsu.models.response.CurrentSongDTO
 import dev.felipeuematsu.service.*
 import io.ktor.http.*
 import io.ktor.http.content.*
-import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
+import io.ktor.serialization.*
+import io.ktor.serialization.kotlinx.*
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.http.content.react
@@ -30,7 +31,7 @@ import io.ktor.util.*
 import io.ktor.util.reflect.*
 import io.ktor.websocket.DefaultWebSocketSession
 import io.ktor.websocket.Frame
-import io.ktor.websocket.serialization.sendSerializedBase
+import io.ktor.websocket.serialization.*
 import kotlinx.coroutines.isActive
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -39,6 +40,7 @@ import java.nio.charset.Charset
 @OptIn(InternalAPI::class)
 fun Application.configureRouting() {
     var currentSong: CurrentSongDTO? = null
+    var volume = 0
 
     routing {
         get("/health") {
@@ -66,14 +68,21 @@ fun Application.configureRouting() {
         webSocket {
             webSocketSession = this
 
+            println("Session started")
             while (isActive) {
                 try {
-                    currentSong = receiveDeserialized<CurrentSongDTO>()
-                } catch (e: Exception) {
-                    println("Error receiving current song: ${e.message}")
+                    val receiveDeserialized = receiveDeserialized<CurrentSongDTO>()
+                    currentSong = receiveDeserialized
+                    println("Current song received: ${currentSong?.songId}")
+                } catch (_: Exception) {
+                }
+                try {
+                    val receiveDeserialized = receiveDeserialized<VolumeRequestDTO>()
+                    volume = receiveDeserialized.volume
+                    println("Volume received: ${receiveDeserialized.volume}")
+                } catch (_: Exception) {
                 }
             }
-            println("Session started successfully")
         }
         delete("/clearDatabase") {
             call.respond(message = ApiService.clearDatabase())
@@ -293,9 +302,13 @@ fun Application.configureRouting() {
             val session = webSocketSession ?: return@post call.respond(
                 HttpStatusCode.FailedDependency, "No WebSocket session found. Try opening the player again."
             )
-            val body = call.receive<VolumeRequestDTO>(typeInfo<Map<String, Any>>())
+            val body = call.receive<VolumeRequestDTO>(typeInfo<VolumeRequestDTO>())
             session.send(Frame.Text("{\"volume\": ${body.volume}}"))
             call.respond(HttpStatusCode.NoContent)
+        }
+
+        get("/volume") {
+            call.respond(volume)
         }
 
         post("/queue") {
