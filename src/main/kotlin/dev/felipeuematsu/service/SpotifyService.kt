@@ -81,20 +81,24 @@ object SpotifyService {
 
     fun searchSongImage(song: String, artist: String): String? {
         return runBlocking {
-            TrackImage.find { (TrackImages.title like song) and (TrackImages.artist like artist) }.firstOrNull()
-                ?.let { return@runBlocking it.url }
-            val filteredSong = song.split('[').first().trim()
-            val response = search("track:$filteredSong artist:$artist", "track", 1)
-            val url =
-                response.tracks?.items?.firstOrNull()?.album?.images?.firstOrNull()?.url ?: searchArtistImages(artist)
-            url?.let {
-                TrackImage.new {
-                    this.title = song
-                    this.artist = artist
-                    this.url = url
+            transaction {
+                TrackImage.find { (TrackImages.title like song) and (TrackImages.artist like artist) }.firstOrNull()
+                    ?.let { return@transaction it.url }
+                val filteredSong = song.split('[').first().trim()
+                val response = search("track:$filteredSong artist:$artist", "track", 1)
+                val url =
+                    response.tracks?.items?.firstOrNull()?.album?.images?.firstOrNull()?.url ?: searchArtistImages(
+                        artist
+                    )
+                url?.let {
+                    TrackImage.new {
+                        this.title = song
+                        this.artist = artist
+                        this.url = url
+                    }
                 }
+                url
             }
-            url
         }
 
     }

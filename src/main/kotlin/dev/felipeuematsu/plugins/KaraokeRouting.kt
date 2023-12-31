@@ -349,7 +349,10 @@ fun Application.configureRouting() {
 
         get("/playing") {
             val songDTO =
-                currentSong?.songId?.let { ApiService.getSong(it) } ?: return@get call.respond(HttpStatusCode.NoContent)
+                currentSong?.songId?.let { songId -> ApiService.getSong(songId) } ?: return@get call.respond(HttpStatusCode.NoContent)
+            songDTO.imageUrl =
+                SpotifyService.searchSongImage(songDTO.title, songDTO.artist)
+                    ?: SpotifyService.searchArtistImages(songDTO.artist)
             currentSong = currentSong?.copy(song = songDTO)
             val playingDTO = currentSong ?: return@get call.respond(HttpStatusCode.NoContent)
             call.respond(playingDTO)
